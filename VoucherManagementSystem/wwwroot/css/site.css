@@ -1,0 +1,165 @@
+/* wwwroot/css/site.css */
+html {
+    font-size: 14px;
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    margin-bottom: 60px;
+    background-color: #f8f9fa;
+}
+
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    white-space: nowrap;
+    line-height: 60px;
+    background-color: #f8f9fa;
+}
+
+/* Custom styles */
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.card {
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    border: none;
+}
+
+.card-header {
+    font-weight: 600;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    border-top: none;
+}
+
+.btn {
+    font-weight: 500;
+    padding: 8px 16px;
+}
+
+.btn-sm {
+    padding: 4px 8px;
+}
+
+.badge {
+    padding: 5px 10px;
+    font-weight: 500;
+}
+
+/* Dashboard cards */
+.dashboard-card {
+    transition: transform 0.3s;
+}
+
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+    }
+
+/* Form styling */
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 5px;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+/* DataTables customization */
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter {
+    margin-bottom: 20px;
+}
+
+.dataTables_wrapper .dataTables_info {
+    padding-top: 20px;
+}
+
+.dataTables_wrapper .dataTables_paginate {
+    padding-top: 20px;
+}
+
+/* Dropdown menu */
+.dropdown-menu {
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+/* Alert messages */
+.alert {
+    border: none;
+    border-radius: 5px;
+    font-weight: 500;
+}
+
+/* Print styles */
+@media print {
+    .btn,
+    .navbar,
+    .footer,
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter,
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+        display: none !important;
+    }
+
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #dee2e6 !important;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 15px;
+    }
+
+    .table {
+        font-size: 12px;
+    }
+
+    .btn {
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+}
+
+/* Loading spinner */
+.spinner-border {
+    width: 20px;
+    height: 20px;
+    border-width: 2px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }

@@ -1,0 +1,146 @@
+﻿using Microsoft.EntityFrameworkCore;
+using VoucherManagementSystem.Data;
+using VoucherManagementSystem.Interfaces;
+using VoucherManagementSystem.Models;
+
+namespace VoucherManagementSystem.Repositories
+{
+    public class VoucherRepository : GenericRepository<Voucher>, IVoucherRepository
+    {
+        public VoucherRepository(ApplicationDbContext context) : base(context)
+        {
+        }
+
+        public async Task<string> GenerateTransactionNumberAsync(VoucherType type)
+        {
+            var prefix = type switch
+            {
+                VoucherType.Purchase => "PUR",
+                VoucherType.Sale => "SAL",
+                VoucherType.Expense => "EXP",
+                VoucherType.Hazri => "HAZ",
+                VoucherType.CashPaid => "CPD",
+                VoucherType.CashReceived => "CRC",
+                VoucherType.CCR => "CCR",
+                VoucherType.BCR => "BCR",
+                _ => "VCH"
+            };
+
+            var year = DateTime.Now.Year.ToString();
+            var lastVoucher = await _context.Vouchers
+                .Where(v => v.TransactionNumber.StartsWith($"{prefix}-{year}"))
+                .OrderByDescending(v => v.Id)
+                .FirstOrDefaultAsync();
+
+            int nextNumber = 1;
+            if (lastVoucher != null)
+            {
+                var lastNumber = lastVoucher.TransactionNumber.Split('-').Last();
+                if (int.TryParse(lastNumber, out int num))
+                {
+                    nextNumber = num + 1;
+                }
+            }
+
+            return $"{prefix}-{year}-{nextNumber:D6}";
+        }
+
+        public async Task<IEnumerable<Voucher>> GetVouchersByTypeAsync(VoucherType type)
+        {
+            return await _context.Vouchers
+                .Include(v => v.PurchasingCustomer)
+                .Include(v => v.ReceivingCustomer)
+                .Include(v => v.Item)
+                .Include(v => v.Project)
+                .Where(v => v.VoucherType == type)
+                .OrderByDescending(v => v.VoucherDate)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Voucher>> GetVouchersByDateRangeAsync(DateTime fromDate, DateTime toDate)
+        {
+            return await _context.Vouchers
+                .Include(v => v.PurchasingCustomer)
+                .Include(v => v.ReceivingCustomer)
+                .Include(v => v.Item)
+                .Include(v => v.Project)
+                .Where(v => v.VoucherDate >= fromDate && v.VoucherDate <= toDate)
+                .OrderByDescending(v => v.VoucherDate)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Voucher>> GetVouchersByCustomerAsync(int customerId)
+        {
+            return await _context.Vouchers
+                .Include(v => v.PurchasingCustomer)
+                .Include(v => v.ReceivingCustomer)
+                .Include(v => v.Item)
+                .Include(v => v.Project)
+                .Where(v => v.PurchasingCustomerId == customerId || v.ReceivingCustomerId == customerId)
+                .OrderByDescending(v => v.VoucherDate)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Voucher>> GetVouchersByProjectAsync(int projectId)
+        {
+            return await _context.Vouchers
+                .Include(v => v.PurchasingCustomer)
+                .Include(v => v.ReceivingCustomer)
+                .Include(v => v.Item)
+                .Include(v => v.ExpenseHead)
+                .Where(v => v.ProjectId == projectId)
+                .OrderByDescending(v => v.VoucherDate)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Voucher>> GetVouchersWithDetailsAsync()
+        {
+            return await _context.Vouchers
+                .Include(v => v.PurchasingCustomer)
+                .Include(v => v.ReceivingCustomer)
+                .Include(v => v.BankCustomerPaid)
+                .Include(v => v.BankCustomerReceiver)
+                .Include(v => v.Item)
+                .Include(v => v.ExpenseHead)
+                .Include(v => v.Project)
+                .OrderByDescending(v => v.VoucherDate)
+                .ToListAsync();
+        }
+
+        public async Task<decimal> GetProjectProfitLossAsync(int projectId, DateTime fromDate, DateTime toDate)
+        {
+            var vouchers = await _context.Vouchers
+                .Where(v => v.ProjectId == projectId &&
+                            v.VoucherDate >= fromDate &&
+                            v.VoucherDate <= toDate)
+                .ToListAsync();
+
+            decimal revenue = vouchers
+                .Where(v => v.VoucherType == VoucherType.Sale || v.VoucherType == VoucherType.CashReceived)
+                .Sum(v => v.Amount);
+
+            decimal expenses = vouchers
+                .Where(v => v.VoucherType == VoucherType.Purchase ||
+                           v.VoucherType == VoucherType.Expense ||
+                           v.VoucherType == VoucherType.CashPaid ||
+                           v.VoucherType == VoucherType.Hazri)
+                .Sum(v => v.Amount);
+
+            return revenue - expenses;
+        }
+
+        public async Task UpdateStockAsync(int itemId, decimal quantity, bool isAddition)
+        {
+            var item = await _context.Items.FindAsync(itemId);
+            if (item != null && item.StockTrackingEnabled)
+            {
+                if (isAddition)
+                    item.CurrentStock += quantity;
+                else
+                    item.CurrentStock -= quantity;
+
+                await _context.SaveChangesAsync();
+            }
+        }
+    }
+}

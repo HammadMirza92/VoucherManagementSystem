@@ -1,0 +1,131 @@
+﻿@* Views/Vouchers/Index.cshtml *@
+@model IEnumerable<VoucherManagementSystem.Models.Voucher>
+@{
+    ViewData["Title"] = "Vouchers";
+}
+
+<h2><i class="bi bi-file-text"></i> Vouchers Management</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-2">
+                <label class="form-label">Voucher Type</label>
+                <select name="voucherType" class="form-select">
+                    <option value="">All Types</option>
+                    @foreach (var type in Enum.GetValues<VoucherManagementSystem.Models.VoucherType>())
+                    {
+                        <option value="@type" selected="@(ViewBag.VoucherType == type)">@type</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Customer</label>
+                @Html.DropDownList("customerId", ViewBag.Customers as SelectList, "All Customers", new { @class = "form-select" })
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Project</label>
+                @Html.DropDownList("projectId", ViewBag.Projects as SelectList, "All Projects", new { @class = "form-select" })
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">From Date</label>
+                <input type="date" name="fromDate" value="@ViewBag.FromDate?.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">To Date</label>
+                <input type="date" name="toDate" value="@ViewBag.ToDate?.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col-6">
+                <h5>Voucher List</h5>
+            </div>
+            <div class="col-6 text-end">
+                <div class="dropdown">
+                    <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-plus-circle"></i> New Voucher
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" asp-action="Create" asp-route-type="Purchase">Purchase</a></li>
+                        <li><a class="dropdown-item" asp-action="Create" asp-route-type="Sale">Sale</a></li>
+                        <li><a class="dropdown-item" asp-action="Create" asp-route-type="Expense">Expense</a></li>
+                        <li><a class="dropdown-item" asp-action="Create" asp-route-type="Hazri">Hazri</a></li>
+                        <li><a class="dropdown-item" asp-action="Create" asp-route-type="CashPaid">Cash Paid</a></li>
+                        <li><a class="dropdown-item" asp-action="Create" asp-route-type="CashReceived">Cash Received</a></li>
+                        <li><a class="dropdown-item" asp-action="Create" asp-route-type="CCR">CCR</a></li>
+                        <li><a class="dropdown-item" asp-action="Create" asp-route-type="BCR">BCR</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped" id="vouchersTable">
+            <thead>
+                <tr>
+                    <th>Transaction No</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Item</th>
+                    <th>Project</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.TransactionNumber</td>
+                        <td>
+                            <span class="badge bg-@(item.VoucherType == VoucherManagementSystem.Models.VoucherType.Purchase ? "primary" :
+                                                    item.VoucherType == VoucherManagementSystem.Models.VoucherType.Sale ? "success" :
+                                                    item.VoucherType == VoucherManagementSystem.Models.VoucherType.Expense ? "danger" : "secondary")">
+                                @item.VoucherType
+                            </span>
+                        </td>
+                        <td>@item.VoucherDate.ToString("dd-MMM-yyyy")</td>
+                        <td>@(item.PurchasingCustomer?.Name ?? item.ReceivingCustomer?.Name)</td>
+                        <td>@item.Item?.Name</td>
+                        <td>@item.Project?.Name</td>
+                        <td class="text-end">@string.Format("{0:N0}", item.Amount)</td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#vouchersTable').DataTable({
+                "order": [[2, "desc"]],
+                "pageLength": 25
+            });
+        });
+    </script>
+}

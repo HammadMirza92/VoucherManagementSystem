@@ -1,0 +1,31 @@
+﻿@* Views/Vouchers/Edit.cshtml *@
+@model VoucherManagementSystem.Models.Voucher
+@{
+    ViewData["Title"] = "Edit Voucher";
+}
+
+<h2><i class="bi bi-pencil-square"></i> Edit Voucher</h2>
+
+<div class="card">
+    <div class="card-body">
+        <form asp-action="Edit">
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="TransactionNumber" />
+            <input type="hidden" asp-for="VoucherType" />
+
+            @* Same form fields as Create.cshtml but with existing values *@
+            @* Form content identical to Create view *@
+
+            <div class="row">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-save"></i> Update Voucher
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

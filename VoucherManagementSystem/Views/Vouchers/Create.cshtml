@@ -1,0 +1,236 @@
+﻿@* Views/Vouchers/Create.cshtml *@
+@model VoucherManagementSystem.Models.Voucher
+@{
+    ViewData["Title"] = "Create Voucher";
+}
+
+<h2><i class="bi bi-plus-circle"></i> Create New @Model.VoucherType Voucher</h2>
+
+<div class="card">
+    <div class="card-body">
+        <form asp-action="Create" id="voucherForm">
+            <input type="hidden" asp-for="VoucherType" />
+
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label asp-for="TransactionNumber" class="form-label">Transaction Number</label>
+                    <input asp-for="TransactionNumber" class="form-control" readonly />
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label asp-for="VoucherDate" class="form-label">Voucher Date</label>
+                    <input asp-for="VoucherDate" type="date" class="form-control" />
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label asp-for="CashType" class="form-label">Cash Type</label>
+                    <select asp-for="CashType" class="form-select" id="cashType">
+                        <option value="">Select Type</option>
+                        @foreach (var type in Enum.GetValues<VoucherManagementSystem.Models.CashType>())
+                        {
+                            <option value="@type">@type</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label asp-for="ProjectId" class="form-label">Project</label>
+                    @Html.DropDownListFor(m => m.ProjectId, ViewBag.Projects as SelectList, "Select Project", new { @class = "form-select" })
+                </div>
+            </div>
+
+            <div class="row" id="purchasingCustomerSection">
+                <div class="col-md-4 mb-3">
+                    <label asp-for="PurchasingCustomerId" class="form-label">Purchasing Customer</label>
+                    @Html.DropDownListFor(m => m.PurchasingCustomerId, ViewBag.Customers as SelectList, "Select Customer", new { @class = "form-select", id = "purchasingCustomer" })
+                </div>
+                <div class="col-md-8 mb-3">
+                    <label asp-for="PurchasingCustomerDetails" class="form-label">Purchasing Customer Details</label>
+                    <input asp-for="PurchasingCustomerDetails" class="form-control" />
+                </div>
+            </div>
+
+            <div class="row" id="receivingCustomerSection" style="display:none;">
+                <div class="col-md-4 mb-3">
+                    <label asp-for="ReceivingCustomerId" class="form-label">Receiving Customer</label>
+                    @Html.DropDownListFor(m => m.ReceivingCustomerId, ViewBag.Customers as SelectList, "Select Customer", new { @class = "form-select", id = "receivingCustomer" })
+                </div>
+                <div class="col-md-8 mb-3">
+                    <label asp-for="ReceivingCustomerDetails" class="form-label">Receiving Customer Details</label>
+                    <input asp-for="ReceivingCustomerDetails" class="form-control" />
+                </div>
+            </div>
+
+            <div class="row" id="bankSection" style="display:none;">
+                <div class="col-md-3 mb-3">
+                    <label asp-for="BankCustomerPaidId" class="form-label">Bank Customer Paid</label>
+                    @Html.DropDownListFor(m => m.BankCustomerPaidId, ViewBag.Banks as SelectList, "Select Bank", new { @class = "form-select" })
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label asp-for="BankCustomerPaidDetails" class="form-label">Bank Paid Details</label>
+                    <input asp-for="BankCustomerPaidDetails" class="form-control" />
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label asp-for="BankCustomerReceiverId" class="form-label">Bank Customer Receiver</label>
+                    @Html.DropDownListFor(m => m.BankCustomerReceiverId, ViewBag.Banks as SelectList, "Select Bank", new { @class = "form-select" })
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label asp-for="BankCustomerReceiverDetails" class="form-label">Bank Receiver Details</label>
+                    <input asp-for="BankCustomerReceiverDetails" class="form-control" />
+                </div>
+            </div>
+
+            <div class="row" id="itemSection">
+                <div class="col-md-3 mb-3">
+                    <label asp-for="ItemId" class="form-label">Item</label>
+                    @Html.DropDownListFor(m => m.ItemId, ViewBag.Items as SelectList, "Select Item", new { @class = "form-select", id = "itemSelect" })
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label asp-for="Mon" class="form-label">Mon</label>
+                    <input asp-for="Mon" class="form-control" />
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label asp-for="Weight" class="form-label">Weight</label>
+                    <input asp-for="Weight" type="number" step="0.001" class="form-control" id="weight" />
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label asp-for="Kat" class="form-label">Kat</label>
+                    <input asp-for="Kat" type="number" step="0.001" class="form-control" id="kat" />
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label asp-for="Quantity" class="form-label">Quantity</label>
+                    <input asp-for="Quantity" type="number" step="0.001" class="form-control" id="quantity" />
+                </div>
+            </div>
+
+            <div class="row" id="expenseSection" style="display:none;">
+                <div class="col-md-4 mb-3">
+                    <label asp-for="ExpenseHeadId" class="form-label">Expense Head</label>
+                    @Html.DropDownListFor(m => m.ExpenseHeadId, ViewBag.ExpenseHeads as SelectList, "Select Expense Head", new { @class = "form-select", id = "expenseHead" })
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label asp-for="ExpenseHeadRate" class="form-label">Expense Head Rate</label>
+                    <input asp-for="ExpenseHeadRate" type="number" step="0.01" class="form-control" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="ExpenseHeadDetails" class="form-label">Expense Head Details</label>
+                    <input asp-for="ExpenseHeadDetails" class="form-control" />
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-2 mb-3">
+                    <label asp-for="Rate" class="form-label">Rate</label>
+                    <input asp-for="Rate" type="number" step="0.01" class="form-control" id="rate" />
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label asp-for="Amount" class="form-label">Amount</label>
+                    <input asp-for="Amount" type="number" step="0.01" class="form-control" id="amount" />
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label asp-for="GariNo" class="form-label">Gari No.</label>
+                    <input asp-for="GariNo" class="form-control" />
+                </div>
+                <div class="col-md-2 mb-3">
+                    <div class="form-check mt-4">
+                        <input asp-for="StockInclude" class="form-check-input" type="checkbox" id="stockInclude" />
+                        <label class="form-check-label" for="stockInclude">
+                            Stock Include
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Create Voucher
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Get transaction number on load
+            $.get('/Vouchers/GetTransactionNumber?type=@Model.VoucherType', function(data) {
+                $('#TransactionNumber').val(data.transactionNumber);
+            });
+
+            // Show/hide sections based on voucher type
+            var voucherType = '@Model.VoucherType';
+            configureFormForVoucherType(voucherType);
+
+            // Handle cash type change
+            $('#cashType').on('change', function() {
+                if ($(this).val() == 'Bank') {
+                    $('#bankSection').show();
+                } else {
+                    $('#bankSection').hide();
+                }
+            });
+
+            // Calculate amount
+            $('#quantity, #rate').on('change', function() {
+                var qty = parseFloat($('#quantity').val()) || 0;
+                var rate = parseFloat($('#rate').val()) || 0;
+                $('#amount').val((qty * rate).toFixed(2));
+            });
+
+            // Calculate kat from weight
+            $('#weight').on('change', function() {
+                var weight = parseFloat($(this).val()) || 0;
+                $('#kat').val((-weight).toFixed(3));
+            });
+
+            // Get item rate for customer
+            $('#itemSelect, #purchasingCustomer').on('change', function() {
+                var itemId = $('#itemSelect').val();
+                var customerId = $('#purchasingCustomer').val();
+                if (itemId) {
+                    $.get('/Vouchers/GetItemRate', { itemId: itemId, customerId: customerId }, function(data) {
+                        $('#rate').val(data.rate);
+                        $('#quantity').trigger('change');
+                    });
+                }
+            });
+        });
+
+        function configureFormForVoucherType(type) {
+            // Reset all sections
+            $('#purchasingCustomerSection, #receivingCustomerSection, #bankSection, #itemSection, #expenseSection').hide();
+
+            switch(type) {
+                case 'Purchase':
+                    $('#purchasingCustomerSection, #itemSection').show();
+                    $('#stockInclude').parent().show();
+                    break;
+                case 'Sale':
+                    $('#receivingCustomerSection, #itemSection').show();
+                    $('#stockInclude').parent().hide();
+                    break;
+                case 'Expense':
+                    $('#expenseSection').show();
+                    break;
+                case 'Hazri':
+                    $('#expenseSection, #itemSection').show();
+                    break;
+                case 'CashPaid':
+                    $('#purchasingCustomerSection').show();
+                    break;
+                case 'CashReceived':
+                    $('#receivingCustomerSection').show();
+                    break;
+                case 'CCR':
+                    $('#purchasingCustomerSection, #receivingCustomerSection').show();
+                    break;
+                case 'BCR':
+                    $('#bankSection').show();
+                    break;
+            }
+        }
+    </script>
+}
