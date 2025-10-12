@@ -286,11 +286,11 @@
 
             switch(type) {
                 case 'Purchase':
-                    $('#purchasingCustomerSection, #itemSection').show();
+                    $('#purchasingCustomerSection, #itemSection, #expenseSection').show();
                     $('#stockInclude').parent().show();
                     break;
                 case 'Sale':
-                    $('#receivingCustomerSection, #itemSection').show();
+                    $('#receivingCustomerSection, #itemSection, #expenseSection').show();
                     $('#stockInclude').parent().hide();
                     break;
                 case 'Expense':
