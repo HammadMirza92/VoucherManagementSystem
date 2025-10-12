@@ -269,6 +269,8 @@
                     break;
                 case 'CashReceived':
                     $('#receivingCustomerSection').show();
+                    $('#rateSection, #stockIncludeSection').hide();
+                    $('.col-md-3.mb-3:has(label[for="GariNo"])').hide();
                     break;
                 case 'CCR':
                     $('#purchasingCustomerSection, #receivingCustomerSection').show();
