@@ -8,38 +8,47 @@
 
 <div class="card mb-3">
     <div class="card-body">
-        <form method="get" class="row g-3">
+        <form method="get" class="row g-3" id="filterForm">
             <div class="col-md-2">
                 <label class="form-label">Voucher Type</label>
-                <select name="voucherType" class="form-select">
+                <select name="voucherType" class="form-select" id="voucherTypeFilter">
                     <option value="">All Types</option>
                     @foreach (var type in Enum.GetValues<VoucherManagementSystem.Models.VoucherType>())
                     {
-                        <option value="@type" selected="@(ViewBag.VoucherType == type)">@type</option>
+                        <option value="@type" selected="@(ViewBag.VoucherType?.ToString() == type.ToString())">@type</option>
                     }
                 </select>
             </div>
             <div class="col-md-2">
                 <label class="form-label">Customer</label>
-                @Html.DropDownList("customerId", ViewBag.Customers as SelectList, "All Customers", new { @class = "form-select" })
+                @Html.DropDownList("customerId", ViewBag.Customers as SelectList, "All Customers", new { @class = "form-select", id = "customerFilter" })
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Item</label>
+                @Html.DropDownList("itemId", ViewBag.Items as SelectList, "All Items", new { @class = "form-select", id = "itemFilter" })
             </div>
             <div class="col-md-2">
                 <label class="form-label">Project</label>
-                @Html.DropDownList("projectId", ViewBag.Projects as SelectList, "All Projects", new { @class = "form-select" })
+                @Html.DropDownList("projectId", ViewBag.Projects as SelectList, "All Projects", new { @class = "form-select", id = "projectFilter" })
             </div>
             <div class="col-md-2">
                 <label class="form-label">From Date</label>
-                <input type="date" name="fromDate" value="@ViewBag.FromDate?.ToString("yyyy-MM-dd")" class="form-control" />
+                <input type="date" name="fromDate" value="@ViewBag.FromDate?.ToString("yyyy-MM-dd")" class="form-control" id="fromDateFilter" />
             </div>
             <div class="col-md-2">
                 <label class="form-label">To Date</label>
-                <input type="date" name="toDate" value="@ViewBag.ToDate?.ToString("yyyy-MM-dd")" class="form-control" />
+                <input type="date" name="toDate" value="@ViewBag.ToDate?.ToString("yyyy-MM-dd")" class="form-control" id="toDateFilter" />
             </div>
-            <div class="col-md-2">
+            <div class="col-md-6">
                 <label class="form-label">&nbsp;</label>
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-search"></i> Filter
-                </button>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Filter
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="clearFilter">
+                        <i class="bi bi-x-circle"></i> Clear Filter
+                    </button>
+                </div>
             </div>
         </form>
     </div>
@@ -125,6 +134,17 @@
             $('#vouchersTable').DataTable({
                 "order": [[2, "desc"]],
                 "pageLength": 25
+            });
+
+            // Clear filter button functionality
+            $('#clearFilter').on('click', function() {
+                $('#voucherTypeFilter').val('');
+                $('#customerFilter').val('');
+                $('#itemFilter').val('');
+                $('#projectFilter').val('');
+                $('#fromDateFilter').val('');
+                $('#toDateFilter').val('');
+                window.location.href = '@Url.Action("Index", "Vouchers")';
             });
         });
     </script>

@@ -36,38 +36,58 @@ namespace VoucherManagementSystem.Controllers
         }
 
         // GET: Vouchers
-        public async Task<IActionResult> Index(VoucherType? voucherType, int? customerId, int? projectId, DateTime? fromDate, DateTime? toDate)
+        public async Task<IActionResult> Index(VoucherType? voucherType, int? customerId, int? projectId, int? itemId, DateTime? fromDate, DateTime? toDate)
         {
-            IEnumerable<Voucher> vouchers;
+            // Start with all vouchers
+            var vouchers = await _voucherRepository.GetVouchersWithDetailsAsync();
 
+            // Apply filters progressively
             if (voucherType.HasValue)
             {
-                vouchers = await _voucherRepository.GetVouchersByTypeAsync(voucherType.Value);
+                vouchers = vouchers.Where(v => v.VoucherType == voucherType.Value);
             }
-            else if (customerId.HasValue)
+
+            if (customerId.HasValue)
             {
-                vouchers = await _voucherRepository.GetVouchersByCustomerAsync(customerId.Value);
+                vouchers = vouchers.Where(v =>
+                    v.PurchasingCustomerId == customerId.Value ||
+                    v.ReceivingCustomerId == customerId.Value);
             }
-            else if (projectId.HasValue)
+
+            if (projectId.HasValue)
             {
-                vouchers = await _voucherRepository.GetVouchersByProjectAsync(projectId.Value);
+                vouchers = vouchers.Where(v => v.ProjectId == projectId.Value);
             }
-            else if (fromDate.HasValue && toDate.HasValue)
+
+            if (itemId.HasValue)
             {
-                vouchers = await _voucherRepository.GetVouchersByDateRangeAsync(fromDate.Value, toDate.Value);
+                vouchers = vouchers.Where(v => v.ItemId == itemId.Value);
             }
-            else
+
+            if (fromDate.HasValue && toDate.HasValue)
             {
-                vouchers = await _voucherRepository.GetVouchersWithDetailsAsync();
+                vouchers = vouchers.Where(v => v.VoucherDate >= fromDate.Value && v.VoucherDate <= toDate.Value);
+            }
+            else if (fromDate.HasValue)
+            {
+                vouchers = vouchers.Where(v => v.VoucherDate >= fromDate.Value);
+            }
+            else if (toDate.HasValue)
+            {
+                vouchers = vouchers.Where(v => v.VoucherDate <= toDate.Value);
             }
 
             ViewBag.Customers = new SelectList(await _customerRepository.GetActiveCustomersAsync(), "Id", "Name", customerId);
             ViewBag.Projects = new SelectList(await _projectRepository.GetActiveProjectsAsync(), "Id", "Name", projectId);
+            ViewBag.Items = new SelectList(await _itemRepository.GetActiveItemsAsync(), "Id", "Name", itemId);
             ViewBag.VoucherType = voucherType;
+            ViewBag.CustomerId = customerId;
+            ViewBag.ProjectId = projectId;
+            ViewBag.ItemId = itemId;
             ViewBag.FromDate = fromDate;
             ViewBag.ToDate = toDate;
 
-            return View(vouchers);
+            return View(vouchers.ToList());
         }
 
         // GET: Vouchers/Details/5
