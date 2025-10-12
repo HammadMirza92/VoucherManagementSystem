@@ -136,11 +136,15 @@ namespace VoucherManagementSystem.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                // Get opening balance
+                var openingBalance = await GetBankOpeningBalanceAsync(bankId, fromDate);
+
                 var transactions = await _bankRepository.GetBankTransactionsAsync(bankId, fromDate, toDate);
 
                 ViewBag.Bank = bank;
                 ViewBag.FromDate = fromDate;
                 ViewBag.ToDate = toDate;
+                ViewBag.OpeningBalance = openingBalance;
                 ViewBag.Transactions = transactions;
 
                 return View();
@@ -254,6 +258,128 @@ namespace VoucherManagementSystem.Controllers
                     range.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
                     worksheet.Row(1).Style.Font.Bold = true;
                     worksheet.Row(1).Style.Fill.BackgroundColor = XLColor.LightGray;
+                }
+                else if (reportType == "customerLedger" && id.HasValue && fromDate.HasValue && toDate.HasValue)
+                {
+                    var customer = await _customerRepository.GetByIdAsync(id.Value);
+                    if (customer != null)
+                    {
+                        var openingBalance = await GetCustomerOpeningBalanceAsync(id.Value, fromDate.Value);
+
+                        var vouchers = await _context.Vouchers
+                            .Include(v => v.PurchasingCustomer)
+                            .Include(v => v.ReceivingCustomer)
+                            .Include(v => v.Item)
+                            .Include(v => v.ExpenseHead)
+                            .Include(v => v.Project)
+                            .Where(v => (v.PurchasingCustomerId == id.Value || v.ReceivingCustomerId == id.Value) &&
+                                       v.VoucherDate >= fromDate.Value &&
+                                       v.VoucherDate <= toDate.Value.AddDays(1))
+                            .OrderBy(v => v.VoucherDate)
+                            .ThenBy(v => v.Id)
+                            .ToListAsync();
+
+                        // Headers
+                        worksheet.Cell(1, 1).Value = "Customer Ledger Report";
+                        worksheet.Cell(2, 1).Value = $"Customer: {customer.Name}";
+                        worksheet.Cell(3, 1).Value = $"Period: {fromDate.Value:dd-MMM-yyyy} to {toDate.Value:dd-MMM-yyyy}";
+
+                        // Table headers
+                        worksheet.Cell(5, 1).Value = "Date";
+                        worksheet.Cell(5, 2).Value = "Transaction No";
+                        worksheet.Cell(5, 3).Value = "Type";
+                        worksheet.Cell(5, 4).Value = "Particulars";
+                        worksheet.Cell(5, 5).Value = "Debit (Dr)";
+                        worksheet.Cell(5, 6).Value = "Credit (Cr)";
+                        worksheet.Cell(5, 7).Value = "Balance";
+
+                        // Opening balance
+                        int row = 6;
+                        worksheet.Cell(row, 1).Value = fromDate.Value.ToString("dd-MMM-yyyy");
+                        worksheet.Cell(row, 4).Value = "Opening Balance";
+                        worksheet.Cell(row, 5).Value = openingBalance > 0 ? openingBalance : 0;
+                        worksheet.Cell(row, 6).Value = openingBalance < 0 ? Math.Abs(openingBalance) : 0;
+                        worksheet.Cell(row, 7).Value = $"{Math.Abs(openingBalance):N0} {(openingBalance >= 0 ? "Dr" : "Cr")}";
+                        row++;
+
+                        decimal runningBalance = openingBalance;
+                        decimal totalDebit = 0;
+                        decimal totalCredit = 0;
+
+                        foreach (var voucher in vouchers)
+                        {
+                            decimal debit = 0;
+                            decimal credit = 0;
+                            string particulars = "";
+
+                            if (voucher.PurchasingCustomerId == id.Value)
+                            {
+                                switch (voucher.VoucherType)
+                                {
+                                    case VoucherType.Purchase:
+                                        debit = voucher.Amount;
+                                        particulars = $"Purchase - {voucher.Item?.Name ?? "N/A"}";
+                                        break;
+                                    case VoucherType.CashPaid:
+                                        debit = voucher.Amount;
+                                        particulars = "Cash Paid";
+                                        break;
+                                    case VoucherType.CCR:
+                                        debit = voucher.Amount;
+                                        particulars = $"CCR - From {voucher.ReceivingCustomer?.Name ?? "N/A"}";
+                                        break;
+                                }
+                            }
+
+                            if (voucher.ReceivingCustomerId == id.Value)
+                            {
+                                switch (voucher.VoucherType)
+                                {
+                                    case VoucherType.Sale:
+                                        credit = voucher.Amount;
+                                        particulars = $"Sale - {voucher.Item?.Name ?? "N/A"}";
+                                        break;
+                                    case VoucherType.CashReceived:
+                                        credit = voucher.Amount;
+                                        particulars = "Cash Received";
+                                        break;
+                                    case VoucherType.CCR:
+                                        credit = voucher.Amount;
+                                        particulars = $"CCR - To {voucher.PurchasingCustomer?.Name ?? "N/A"}";
+                                        break;
+                                }
+                            }
+
+                            runningBalance += debit - credit;
+                            totalDebit += debit;
+                            totalCredit += credit;
+
+                            worksheet.Cell(row, 1).Value = voucher.VoucherDate.ToString("dd-MMM-yyyy");
+                            worksheet.Cell(row, 2).Value = voucher.TransactionNumber;
+                            worksheet.Cell(row, 3).Value = voucher.VoucherType.ToString();
+                            worksheet.Cell(row, 4).Value = particulars;
+                            worksheet.Cell(row, 5).Value = debit > 0 ? debit : 0;
+                            worksheet.Cell(row, 6).Value = credit > 0 ? credit : 0;
+                            worksheet.Cell(row, 7).Value = $"{Math.Abs(runningBalance):N0} {(runningBalance >= 0 ? "Dr" : "Cr")}";
+                            row++;
+                        }
+
+                        // Totals
+                        worksheet.Cell(row, 4).Value = "Total:";
+                        worksheet.Cell(row, 5).Value = totalDebit;
+                        worksheet.Cell(row, 6).Value = totalCredit;
+                        worksheet.Cell(row, 7).Value = $"{Math.Abs(runningBalance):N0} {(runningBalance >= 0 ? "Dr" : "Cr")}";
+
+                        // Format
+                        worksheet.Row(5).Style.Font.Bold = true;
+                        worksheet.Row(5).Style.Fill.BackgroundColor = XLColor.LightGray;
+                        worksheet.Row(row).Style.Font.Bold = true;
+                        worksheet.Row(row).Style.Fill.BackgroundColor = XLColor.LightGray;
+
+                        var range = worksheet.Range(5, 1, row, 7);
+                        range.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                        range.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+                    }
                 }
 
                 // Auto-fit columns
@@ -497,6 +623,166 @@ namespace VoucherManagementSystem.Controllers
                 TempData["Error"] = "Error generating daily cash book.";
                 return RedirectToAction(nameof(Index));
             }
+        }
+
+        // GET: Reports/CustomerLedger
+        public async Task<IActionResult> CustomerLedger(int? customerId, DateTime? fromDate, DateTime? toDate)
+        {
+            try
+            {
+                if (!customerId.HasValue)
+                {
+                    // Show selection page
+                    ViewBag.Customers = new SelectList(await _customerRepository.GetActiveCustomersAsync(), "Id", "Name");
+                    return View();
+                }
+
+                var customer = await _customerRepository.GetByIdAsync(customerId.Value);
+                if (customer == null)
+                {
+                    TempData["Error"] = "Customer not found.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Default to showing last 90 days if no dates specified
+                var endDate = toDate ?? DateTime.Today;
+                var startDate = fromDate ?? DateTime.Today.AddDays(-90);
+
+                // Get opening balance (transactions before start date)
+                var openingBalance = await GetCustomerOpeningBalanceAsync(customerId.Value, startDate);
+
+                // Get all transactions for the customer in the date range
+                var vouchers = await _context.Vouchers
+                    .Include(v => v.PurchasingCustomer)
+                    .Include(v => v.ReceivingCustomer)
+                    .Include(v => v.Item)
+                    .Include(v => v.ExpenseHead)
+                    .Include(v => v.Project)
+                    .Where(v => (v.PurchasingCustomerId == customerId.Value ||
+                                v.ReceivingCustomerId == customerId.Value) &&
+                               v.VoucherDate >= startDate &&
+                               v.VoucherDate <= endDate.AddDays(1))
+                    .OrderBy(v => v.VoucherDate)
+                    .ThenBy(v => v.Id)
+                    .ToListAsync();
+
+                // Calculate totals
+                decimal totalDebit = 0;
+                decimal totalCredit = 0;
+
+                foreach (var voucher in vouchers)
+                {
+                    // Customer received money (Debit - they owe us)
+                    if (voucher.PurchasingCustomerId == customerId.Value)
+                    {
+                        switch (voucher.VoucherType)
+                        {
+                            case VoucherType.Purchase:
+                            case VoucherType.CashPaid:
+                            case VoucherType.CCR:
+                                totalDebit += voucher.Amount;
+                                break;
+                        }
+                    }
+
+                    // Customer paid money (Credit - we owe them)
+                    if (voucher.ReceivingCustomerId == customerId.Value)
+                    {
+                        switch (voucher.VoucherType)
+                        {
+                            case VoucherType.Sale:
+                            case VoucherType.CashReceived:
+                            case VoucherType.CCR:
+                                totalCredit += voucher.Amount;
+                                break;
+                        }
+                    }
+                }
+
+                ViewBag.Customer = customer;
+                ViewBag.FromDate = startDate;
+                ViewBag.ToDate = endDate;
+                ViewBag.OpeningBalance = openingBalance;
+                ViewBag.TotalDebit = totalDebit;
+                ViewBag.TotalCredit = totalCredit;
+                ViewBag.ClosingBalance = openingBalance + totalDebit - totalCredit;
+                ViewBag.Vouchers = vouchers;
+                ViewBag.Customers = new SelectList(await _customerRepository.GetActiveCustomersAsync(), "Id", "Name", customerId);
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating customer ledger");
+                TempData["Error"] = "Error generating customer ledger.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // Helper method to get opening balance for customer
+        private async Task<decimal> GetCustomerOpeningBalanceAsync(int customerId, DateTime date)
+        {
+            var previousVouchers = await _context.Vouchers
+                .Where(v => (v.PurchasingCustomerId == customerId || v.ReceivingCustomerId == customerId) &&
+                           v.VoucherDate < date)
+                .ToListAsync();
+
+            decimal balance = 0;
+            foreach (var voucher in previousVouchers)
+            {
+                // Customer received money (Debit - they owe us)
+                if (voucher.PurchasingCustomerId == customerId)
+                {
+                    switch (voucher.VoucherType)
+                    {
+                        case VoucherType.Purchase:
+                        case VoucherType.CashPaid:
+                        case VoucherType.CCR:
+                            balance += voucher.Amount;
+                            break;
+                    }
+                }
+
+                // Customer paid money (Credit - we owe them)
+                if (voucher.ReceivingCustomerId == customerId)
+                {
+                    switch (voucher.VoucherType)
+                    {
+                        case VoucherType.Sale:
+                        case VoucherType.CashReceived:
+                        case VoucherType.CCR:
+                            balance -= voucher.Amount;
+                            break;
+                    }
+                }
+            }
+            return balance;
+        }
+
+        // Helper method to get opening bank balance
+        private async Task<decimal> GetBankOpeningBalanceAsync(int bankId, DateTime date)
+        {
+            var previousVouchers = await _context.Vouchers
+                .Where(v => (v.BankCustomerPaidId == bankId || v.BankCustomerReceiverId == bankId) &&
+                           v.VoucherDate < date)
+                .ToListAsync();
+
+            decimal balance = 0;
+            foreach (var voucher in previousVouchers)
+            {
+                // Money paid from bank (debit - reduces bank balance)
+                if (voucher.BankCustomerPaidId == bankId)
+                {
+                    balance -= voucher.Amount;
+                }
+
+                // Money received into bank (credit - increases bank balance)
+                if (voucher.BankCustomerReceiverId == bankId)
+                {
+                    balance += voucher.Amount;
+                }
+            }
+            return balance;
         }
     }
 

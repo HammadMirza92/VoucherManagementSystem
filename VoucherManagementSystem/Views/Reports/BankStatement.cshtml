@@ -33,10 +33,22 @@
                 </dl>
             </div>
             <div class="col-md-6">
-                <div class="card bg-info text-white">
-                    <div class="card-body text-center">
-                        <h6>Current Balance</h6>
-                        <h2 class="mb-0">Rs. @string.Format("{0:N0}", bank?.Balance ?? 0)</h2>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card bg-secondary text-white">
+                            <div class="card-body text-center">
+                                <h6>Opening Balance</h6>
+                                <h4 class="mb-0">Rs. @string.Format("{0:N0}", Math.Abs(ViewBag.OpeningBalance ?? 0))</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <h6>Current Balance</h6>
+                                <h4 class="mb-0">Rs. @string.Format("{0:N0}", Math.Abs(bank?.Balance ?? 0))</h4>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -64,92 +76,111 @@
                 </thead>
                 <tbody>
                     @{
-                        decimal runningBalance = 0;
+                        decimal openingBalance = ViewBag.OpeningBalance != null ? (decimal)ViewBag.OpeningBalance : 0;
+                        decimal runningBalance = openingBalance;
                         decimal totalDebit = 0;
                         decimal totalCredit = 0;
+                    }
 
-                        if (transactions != null && bank != null)
+                    <!-- Opening Balance Row -->
+                    <tr class="table-secondary">
+                        <td>@fromDate.ToString("dd-MMM-yy")</td>
+                        <td colspan="3"><strong>Opening Balance</strong></td>
+                        <td class="text-end">@(openingBalance < 0 ? string.Format("{0:N0}", Math.Abs(openingBalance)) : "-")</td>
+                        <td class="text-end">@(openingBalance > 0 ? string.Format("{0:N0}", openingBalance) : "-")</td>
+                        <td class="text-end fw-bold @(openingBalance >= 0 ? "text-primary" : "text-danger")">
+                            @string.Format("{0:N0}", Math.Abs(openingBalance))
+                        </td>
+                    </tr>
+
+                    @if (transactions != null && bank != null)
+                    {
+                        foreach (var transaction in transactions.OrderBy(t => t.VoucherDate).ThenBy(t => t.Id))
                         {
-                            // Get opening balance (this would ideally come from a calculation)
-                            runningBalance = bank.Balance;
+                            bool isDebit = transaction.BankCustomerPaidId == bank.Id;
+                            bool isCredit = transaction.BankCustomerReceiverId == bank.Id;
 
-                            // Calculate backward from current balance
-                            foreach (var trans in transactions.OrderByDescending(t => t.VoucherDate))
+                            if (isDebit)
                             {
-                                if (trans.BankCustomerPaidId == bank.Id)
-                                {
-                                    runningBalance += trans.Amount;
-                                }
-                                else if (trans.BankCustomerReceiverId == bank.Id)
-                                {
-                                    runningBalance -= trans.Amount;
-                                }
+                                runningBalance -= transaction.Amount;
+                                totalDebit += transaction.Amount;
+                            }
+                            else if (isCredit)
+                            {
+                                runningBalance += transaction.Amount;
+                                totalCredit += transaction.Amount;
                             }
 
-                            // Now display forward
-                            foreach (var transaction in transactions.OrderBy(t => t.VoucherDate))
-                            {
-                                bool isDebit = transaction.BankCustomerPaidId == bank.Id;
-                                bool isCredit = transaction.BankCustomerReceiverId == bank.Id;
-
-                                if (isDebit)
-                                {
-                                    runningBalance -= transaction.Amount;
-                                    totalDebit += transaction.Amount;
-                                }
-                                else if (isCredit)
-                                {
-                                    runningBalance += transaction.Amount;
-                                    totalCredit += transaction.Amount;
-                                }
-
-                                <tr>
-                                    <td>@transaction.VoucherDate.ToString("dd-MMM-yy")</td>
-                                    <td>
-                                        <a asp-controller="Vouchers" asp-action="Details" asp-route-id="@transaction.Id">
-                                            @transaction.TransactionNumber
-                                        </a>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-secondary">@transaction.VoucherType</span>
-                                    </td>
-                                    <td>
-                                        @(transaction.BankCustomerPaidDetails ?? transaction.BankCustomerReceiverDetails ??
-                                        transaction.PurchasingCustomerDetails ?? transaction.ReceivingCustomerDetails ??
-                                        "Bank Transaction")
-                                    </td>
-                                    <td class="text-end">
-                                        @if (isDebit)
-                                        {
-                                            <span class="text-danger">@string.Format("{0:N0}", transaction.Amount)</span>
-                                        }
-                                    </td>
-                                    <td class="text-end">
-                                        @if (isCredit)
-                                        {
-                                            <span class="text-success">@string.Format("{0:N0}", transaction.Amount)</span>
-                                        }
-                                    </td>
-                                    <td class="text-end fw-bold @(runningBalance >= 0 ? "text-primary" : "text-danger")">
-                                        @string.Format("{0:N0}", runningBalance)
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
                             <tr>
-                                <td colspan="7" class="text-center">No transactions found for the selected period.</td>
+                                <td>@transaction.VoucherDate.ToString("dd-MMM-yy")</td>
+                                <td>
+                                    <a asp-controller="Vouchers" asp-action="Details" asp-route-id="@transaction.Id">
+                                        @transaction.TransactionNumber
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-@(transaction.VoucherType == VoucherManagementSystem.Models.VoucherType.BCR ? "info" : "secondary")">
+                                        @transaction.VoucherType
+                                    </span>
+                                </td>
+                                <td>
+                                    @(transaction.BankCustomerPaidDetails ?? transaction.BankCustomerReceiverDetails ??
+                                    transaction.PurchasingCustomerDetails ?? transaction.ReceivingCustomerDetails ??
+                                    "Bank Transaction")
+                                </td>
+                                <td class="text-end">
+                                    @if (isDebit)
+                                    {
+                                        <span class="text-danger">@string.Format("{0:N0}", transaction.Amount)</span>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    @if (isCredit)
+                                    {
+                                        <span class="text-success">@string.Format("{0:N0}", transaction.Amount)</span>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+                                <td class="text-end fw-bold @(runningBalance >= 0 ? "text-primary" : "text-danger")">
+                                    @string.Format("{0:N0}", Math.Abs(runningBalance))
+                                </td>
                             </tr>
                         }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center">No transactions found for the selected period.</td>
+                        </tr>
                     }
                 </tbody>
                 <tfoot>
                     <tr class="table-dark">
-                        <th colspan="4">Total</th>
+                        <th colspan="4">Period Total (Debit/Credit)</th>
                         <th class="text-end">@string.Format("{0:N0}", totalDebit)</th>
                         <th class="text-end">@string.Format("{0:N0}", totalCredit)</th>
-                        <th class="text-end">@string.Format("{0:N0}", bank?.Balance ?? 0)</th>
+                        <th class="text-end"></th>
+                    </tr>
+                    <tr class="table-dark">
+                        <th colspan="4">Closing Balance (as of @toDate.ToString("dd-MMM-yyyy"))</th>
+                        <th colspan="2" class="text-end">
+                            @{
+                                decimal closingBalance = openingBalance + totalCredit - totalDebit;
+                            }
+                        </th>
+                        <th class="text-end">@string.Format("{0:N0}", Math.Abs(closingBalance))</th>
+                    </tr>
+                    <tr class="table-info">
+                        <th colspan="4">Current Bank Balance</th>
+                        <th colspan="2" class="text-end"></th>
+                        <th class="text-end">@string.Format("{0:N0}", Math.Abs(bank?.Balance ?? 0))</th>
                     </tr>
                 </tfoot>
             </table>
