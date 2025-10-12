@@ -274,9 +274,17 @@
                     break;
                 case 'CCR':
                     $('#purchasingCustomerSection, #receivingCustomerSection').show();
+                    $('#rateSection, #stockIncludeSection').hide();
+                    $('.col-md-3.mb-3:has(label[for="CashType"])').hide();
+                    $('.col-md-3.mb-3:has(label[for="ProjectId"])').hide();
+                    $('.col-md-3.mb-3:has(label[for="GariNo"])').hide();
                     break;
                 case 'BCR':
                     $('#bankSection').show();
+                    $('#rateSection, #stockIncludeSection').hide();
+                    $('.col-md-3.mb-3:has(label[for="CashType"])').hide();
+                    $('.col-md-3.mb-3:has(label[for="ProjectId"])').hide();
+                    $('.col-md-3.mb-3:has(label[for="GariNo"])').hide();
                     break;
             }
         }
