@@ -105,24 +105,24 @@ namespace VoucherManagementSystem.Controllers
         }
 
         // GET: Reports/StockReport
-        public async Task<IActionResult> StockReport()
-        {
-            try
-            {
-                var items = await _context.Items
-                    .Where(i => i.StockTrackingEnabled && i.IsActive)
-                    .OrderBy(i => i.Name)
-                    .ToListAsync();
+        //public async Task<IActionResult> StockReport()
+        //{
+        //    try
+        //    {
+        //        var items = await _context.Items
+        //            .Where(i => i.StockTrackingEnabled && i.IsActive)
+        //            .OrderBy(i => i.Name)
+        //            .ToListAsync();
 
-                return View(items);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating stock report");
-                TempData["Error"] = "Error generating stock report.";
-                return RedirectToAction(nameof(Index));
-            }
-        }
+        //        return View(items);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error generating stock report");
+        //        TempData["Error"] = "Error generating stock report.";
+        //        return RedirectToAction(nameof(Index));
+        //    }
+        //}
 
         // GET: Reports/BankStatement
         public async Task<IActionResult> BankStatement(int bankId, DateTime fromDate, DateTime toDate)
@@ -274,5 +274,242 @@ namespace VoucherManagementSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
         }
+
+        // GET: Reports/CashFlow
+        public async Task<IActionResult> CashFlow(DateTime? fromDate, DateTime? toDate)
+        {
+            try
+            {
+                // Default to showing last 30 days if no dates specified
+                var endDate = toDate ?? DateTime.Today;
+                var startDate = fromDate ?? DateTime.Today.AddDays(-30);
+
+                // Get all cash transactions
+                var vouchers = await _voucherRepository.GetVouchersByDateRangeAsync(startDate, endDate.AddDays(1));
+
+                // Filter only cash transactions
+                var cashVouchers = vouchers.Where(v =>
+                    v.CashType == CashType.Cash ||
+                    v.VoucherType == VoucherType.CashPaid ||
+                    v.VoucherType == VoucherType.CashReceived).ToList();
+
+                // Calculate cash in and out
+                decimal cashIn = 0;
+                decimal cashOut = 0;
+                decimal openingBalance = await GetOpeningCashBalanceAsync(startDate);
+
+                foreach (var voucher in cashVouchers)
+                {
+                    switch (voucher.VoucherType)
+                    {
+                        case VoucherType.Sale:
+                        case VoucherType.CashReceived:
+                            if (voucher.CashType == CashType.Cash)
+                                cashIn += voucher.Amount;
+                            break;
+                        case VoucherType.Purchase:
+                        case VoucherType.Expense:
+                        case VoucherType.CashPaid:
+                        case VoucherType.Hazri:
+                            if (voucher.CashType == CashType.Cash)
+                                cashOut += voucher.Amount;
+                            break;
+                    }
+                }
+
+                ViewBag.FromDate = startDate;
+                ViewBag.ToDate = endDate;
+                ViewBag.CashIn = cashIn;
+                ViewBag.CashOut = cashOut;
+                ViewBag.OpeningBalance = openingBalance;
+                ViewBag.ClosingBalance = openingBalance + cashIn - cashOut;
+                ViewBag.CashVouchers = cashVouchers.OrderBy(v => v.VoucherDate);
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating cash flow report");
+                TempData["Error"] = "Error generating cash flow report.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // GET: Reports/StockReport - UPDATED with date filtering
+        public async Task<IActionResult> StockReport(DateTime? fromDate, DateTime? toDate, bool showAll = false)
+        {
+            try
+            {
+                var items = await _context.Items
+                    .Where(i => i.StockTrackingEnabled && i.IsActive)
+                    .OrderBy(i => i.Name)
+                    .ToListAsync();
+
+                // If dates are specified, calculate stock movement
+                if (fromDate.HasValue && toDate.HasValue && !showAll)
+                {
+                    var vouchers = await _voucherRepository.GetVouchersByDateRangeAsync(
+                        fromDate.Value,
+                        toDate.Value.AddDays(1));
+
+                    // Create stock movement summary
+                    var stockMovements = new Dictionary<int, StockMovement>();
+
+                    foreach (var item in items)
+                    {
+                        stockMovements[item.Id] = new StockMovement
+                        {
+                            Item = item,
+                            OpeningStock = await GetOpeningStockAsync(item.Id, fromDate.Value),
+                            PurchaseQty = 0,
+                            SaleQty = 0,
+                            CurrentStock = item.CurrentStock
+                        };
+                    }
+
+                    // Calculate movements from vouchers
+                    foreach (var voucher in vouchers.Where(v => v.ItemId.HasValue))
+                    {
+                        if (stockMovements.ContainsKey(voucher.ItemId.Value))
+                        {
+                            if (voucher.VoucherType == VoucherType.Purchase && voucher.StockInclude)
+                            {
+                                stockMovements[voucher.ItemId.Value].PurchaseQty += voucher.Quantity ?? 0;
+                            }
+                            else if (voucher.VoucherType == VoucherType.Sale)
+                            {
+                                stockMovements[voucher.ItemId.Value].SaleQty += voucher.Quantity ?? 0;
+                            }
+                        }
+                    }
+
+                    ViewBag.StockMovements = stockMovements.Values;
+                    ViewBag.ShowMovement = true;
+                }
+                else
+                {
+                    ViewBag.ShowMovement = false;
+                }
+
+                ViewBag.FromDate = fromDate;
+                ViewBag.ToDate = toDate;
+                ViewBag.ShowAll = showAll;
+
+                return View(items);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating stock report");
+                TempData["Error"] = "Error generating stock report.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // Helper method to get opening cash balance
+        private async Task<decimal> GetOpeningCashBalanceAsync(DateTime date)
+        {
+            var previousVouchers = await _context.Vouchers
+                .Where(v => v.VoucherDate < date &&
+                           (v.CashType == CashType.Cash ||
+                            v.VoucherType == VoucherType.CashPaid ||
+                            v.VoucherType == VoucherType.CashReceived))
+                .ToListAsync();
+
+            decimal balance = 0;
+            foreach (var voucher in previousVouchers)
+            {
+                switch (voucher.VoucherType)
+                {
+                    case VoucherType.Sale:
+                    case VoucherType.CashReceived:
+                        if (voucher.CashType == CashType.Cash)
+                            balance += voucher.Amount;
+                        break;
+                    case VoucherType.Purchase:
+                    case VoucherType.Expense:
+                    case VoucherType.CashPaid:
+                    case VoucherType.Hazri:
+                        if (voucher.CashType == CashType.Cash)
+                            balance -= voucher.Amount;
+                        break;
+                }
+            }
+            return balance;
+        }
+
+        // Helper method to get opening stock
+        private async Task<decimal> GetOpeningStockAsync(int itemId, DateTime date)
+        {
+            var previousVouchers = await _context.Vouchers
+                .Where(v => v.ItemId == itemId && v.VoucherDate < date)
+                .ToListAsync();
+
+            decimal stock = 0;
+            foreach (var voucher in previousVouchers)
+            {
+                if (voucher.VoucherType == VoucherType.Purchase && voucher.StockInclude)
+                {
+                    stock += voucher.Quantity ?? 0;
+                }
+                else if (voucher.VoucherType == VoucherType.Sale)
+                {
+                    stock -= voucher.Quantity ?? 0;
+                }
+            }
+            return stock;
+        }
+
+        // GET: Reports/DailyCashBook
+        public async Task<IActionResult> DailyCashBook(DateTime? date)
+        {
+            try
+            {
+                var reportDate = date ?? DateTime.Today;
+                var nextDay = reportDate.AddDays(1);
+
+                // Get opening balance
+                var openingBalance = await GetOpeningCashBalanceAsync(reportDate);
+
+                // Get today's transactions
+                var todayVouchers = await _context.Vouchers
+                    .Include(v => v.PurchasingCustomer)
+                    .Include(v => v.ReceivingCustomer)
+                    .Include(v => v.Item)
+                    .Include(v => v.ExpenseHead)
+                    .Include(v => v.Project)
+                    .Where(v => v.VoucherDate >= reportDate &&
+                               v.VoucherDate < nextDay &&
+                               (v.CashType == CashType.Cash ||
+                                v.VoucherType == VoucherType.CashPaid ||
+                                v.VoucherType == VoucherType.CashReceived))
+                    .OrderBy(v => v.VoucherDate)
+                    .ToListAsync();
+
+                ViewBag.ReportDate = reportDate;
+                ViewBag.OpeningBalance = openingBalance;
+                ViewBag.Vouchers = todayVouchers;
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating daily cash book");
+                TempData["Error"] = "Error generating daily cash book.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
     }
+
+    // Helper class for stock movement
+    public class StockMovement
+    {
+        public Item Item { get; set; }
+        public decimal OpeningStock { get; set; }
+        public decimal PurchaseQty { get; set; }
+        public decimal SaleQty { get; set; }
+        public decimal CurrentStock { get; set; }
+        public decimal ClosingStock => OpeningStock + PurchaseQty - SaleQty;
+    }
+
+
 }
