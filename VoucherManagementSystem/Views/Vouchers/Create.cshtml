@@ -84,7 +84,7 @@
                 </div>
                 <div class="col-md-2 mb-3">
                     <label asp-for="Mon" class="form-label">Mon</label>
-                    <input asp-for="Mon" class="form-control" />
+                    <input asp-for="Mon" class="form-control" id="Mon" type="number" step="0.001" />
                 </div>
                 <div class="col-md-2 mb-3">
                     <label asp-for="Weight" class="form-label">Weight</label>
@@ -173,24 +173,49 @@
                 }
             });
 
-            // Calculate amount
-            $('#quantity, #rate').on('change', function() {
+            // Calculate Weight, Kat, and Quantity when Mon changes
+            $('#Mon').on('input', function() {
+                var mon = parseFloat($(this).val()) || 0;
+                var weight = mon * 40;
+                $('#weight').val(weight.toFixed(3));
+                $('#kat').val(0);
+                var quantity = weight - 0;
+                $('#quantity').val(quantity.toFixed(3));
+                // Trigger amount calculation
+                $('#quantity').trigger('change');
+            });
+
+            // Calculate Quantity when Weight or Kat changes
+            $('#weight, #kat').on('input', function() {
+                var weight = parseFloat($('#weight').val()) || 0;
+                var kat = parseFloat($('#kat').val()) || 0;
+                var quantity = weight - kat;
+                $('#quantity').val(quantity.toFixed(3));
+                // Trigger amount calculation
+                $('#quantity').trigger('change');
+            });
+
+            // Calculate amount when Quantity or Rate changes
+            $('#quantity, #rate').on('input change', function() {
                 var qty = parseFloat($('#quantity').val()) || 0;
                 var rate = parseFloat($('#rate').val()) || 0;
                 $('#amount').val((qty * rate).toFixed(2));
             });
 
-            // Calculate kat from weight
-            $('#weight').on('change', function() {
-                var weight = parseFloat($(this).val()) || 0;
-                $('#kat').val((-weight).toFixed(3));
-            });
-
-            // Get item rate for customer
-            $('#itemSelect, #purchasingCustomer').on('change', function() {
+            // Get item rate based on Receiving Customer (for Sale) or Purchasing Customer
+            $('#itemSelect, #receivingCustomer, #purchasingCustomer').on('change', function() {
                 var itemId = $('#itemSelect').val();
-                var customerId = $('#purchasingCustomer').val();
-                if (itemId) {
+                var voucherType = '@Model.VoucherType';
+                var customerId;
+
+                // For Sale vouchers, use Receiving Customer; for Purchase, use Purchasing Customer
+                if (voucherType === 'Sale') {
+                    customerId = $('#receivingCustomer').val();
+                } else {
+                    customerId = $('#purchasingCustomer').val();
+                }
+
+                if (itemId && customerId) {
                     $.get('/Vouchers/GetItemRate', { itemId: itemId, customerId: customerId }, function(data) {
                         $('#rate').val(data.rate);
                         $('#quantity').trigger('change');
