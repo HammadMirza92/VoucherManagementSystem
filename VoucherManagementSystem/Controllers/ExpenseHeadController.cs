@@ -14,9 +14,13 @@ namespace VoucherManagementSystem.Controllers
             _expenseHeadRepository = expenseHeadRepository;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(DateTime? fromDate, DateTime? toDate)
         {
-            return View(await _expenseHeadRepository.GetActiveExpenseHeadsAsync());
+            ViewBag.FromDate = fromDate?.ToString("yyyy-MM-dd");
+            ViewBag.ToDate = toDate?.ToString("yyyy-MM-dd");
+
+            var expenseHeads = await _expenseHeadRepository.GetActiveExpenseHeadsWithDateFilterAsync(fromDate, toDate);
+            return View(expenseHeads);
         }
 
         public async Task<IActionResult> Details(int? id)

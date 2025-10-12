@@ -19,6 +19,24 @@ namespace VoucherManagementSystem.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<ExpenseHead>> GetActiveExpenseHeadsWithDateFilterAsync(DateTime? fromDate, DateTime? toDate)
+        {
+            var query = _context.ExpenseHeads
+                .Where(e => e.IsActive);
+
+            if (fromDate.HasValue)
+            {
+                query = query.Where(e => e.CreatedDate >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                query = query.Where(e => e.CreatedDate <= toDate.Value);
+            }
+
+            return await query.OrderBy(e => e.Name).ToListAsync();
+        }
+
         public async Task<decimal> GetTotalExpensesByHeadAsync(int expenseHeadId, DateTime fromDate, DateTime toDate)
         {
             return await _context.Vouchers
