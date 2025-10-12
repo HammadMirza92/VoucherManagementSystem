@@ -265,12 +265,8 @@ else
 @section Scripts {
     <script>
         $(document).ready(function() {
-            $('#ledgerTable').DataTable({
-                "paging": false,
-                "searching": false,
-                "info": false,
-                "ordering": false
-            });
+            // DataTables disabled for ledger table due to complex structure with opening balance row
+            // The table works fine without DataTables features
         });
 
         function exportTableToExcel(tableID, filename = ''){
