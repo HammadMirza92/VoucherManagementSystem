@@ -260,6 +260,12 @@
                     break;
                 case 'Hazri':
                     $('#expenseSection, #itemSection').show();
+                    $('.col-md-3.mb-3:has(label[for="CashType"])').hide();
+                    $('.col-md-2.mb-3:has(label[for="Mon"])').hide();
+                    $('.col-md-2.mb-3:has(label[for="Weight"])').hide();
+                    $('.col-md-2.mb-3:has(label[for="Kat"])').hide();
+                    $('.col-md-2.mb-3:has(label[for="ExpenseHeadRate"])').hide();
+                    $('#stockIncludeSection').hide();
                     break;
                 case 'CashPaid':
                     $('#purchasingCustomerSection').show();
