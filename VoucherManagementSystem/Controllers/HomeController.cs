@@ -158,6 +158,19 @@ namespace VoucherManagementSystem.Controllers
                         break;
                 }
             }
+
+            // Include CashAdjustments
+            try
+            {
+                var cashAdjustments = await _context.CashAdjustments.Where(c => c.AdjustmentDate < date).ToListAsync();
+                foreach (var adj in cashAdjustments)
+                {
+                    if (adj.AdjustmentType == CashAdjustmentType.CashIn) cashInHand += adj.Amount;
+                    else if (adj.AdjustmentType == CashAdjustmentType.CashOut) cashInHand -= adj.Amount;
+                }
+            }
+            catch { /* CashAdjustments table may not exist */ }
+
             ViewBag.CashInHand = cashInHand;
 
             // 4. Bank Balances
