@@ -58,7 +58,7 @@ namespace VoucherManagementSystem.Migrations
                     b.ToTable("Banks");
                 });
 
-            modelBuilder.Entity("VoucherManagementSystem.Models.Cash", b =>
+            modelBuilder.Entity("VoucherManagementSystem.Models.CashAdjustment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -66,44 +66,15 @@ namespace VoucherManagementSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("Balance")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("CreatedDate")
+                    b.Property<DateTime>("AdjustmentDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Details")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("CashAccounts");
-                });
-
-            modelBuilder.Entity("VoucherManagementSystem.Models.CashTransaction", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("AdjustmentType")
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("CashId")
-                        .HasColumnType("int");
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
@@ -118,17 +89,9 @@ namespace VoucherManagementSystem.Migrations
                     b.Property<string>("ReferenceNumber")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("TransactionDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("TransactionType")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("CashId");
-
-                    b.ToTable("CashTransactions");
+                    b.ToTable("CashAdjustments");
                 });
 
             modelBuilder.Entity("VoucherManagementSystem.Models.Customer", b =>
@@ -422,17 +385,6 @@ namespace VoucherManagementSystem.Migrations
                         .IsUnique();
 
                     b.ToTable("Vouchers");
-                });
-
-            modelBuilder.Entity("VoucherManagementSystem.Models.CashTransaction", b =>
-                {
-                    b.HasOne("VoucherManagementSystem.Models.Cash", "Cash")
-                        .WithMany()
-                        .HasForeignKey("CashId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Cash");
                 });
 
             modelBuilder.Entity("VoucherManagementSystem.Models.CustomerItemRate", b =>

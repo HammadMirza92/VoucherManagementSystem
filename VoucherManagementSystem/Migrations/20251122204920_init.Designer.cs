@@ -12,7 +12,7 @@ using VoucherManagementSystem.Data;
 namespace VoucherManagementSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250920081510_init")]
+    [Migration("20251122204920_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -59,6 +59,42 @@ namespace VoucherManagementSystem.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Banks");
+                });
+
+            modelBuilder.Entity("VoucherManagementSystem.Models.CashAdjustment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AdjustmentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("AdjustmentType")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ReferenceNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CashAdjustments");
                 });
 
             modelBuilder.Entity("VoucherManagementSystem.Models.Customer", b =>
