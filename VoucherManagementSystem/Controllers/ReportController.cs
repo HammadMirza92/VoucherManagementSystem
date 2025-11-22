@@ -65,6 +65,46 @@ namespace VoucherManagementSystem.Controllers
             }
         }
 
+        // GET: Reports/ProjectReport - Project details report
+        public async Task<IActionResult> ProjectReport(int projectId, DateTime? fromDate, DateTime? toDate)
+        {
+            try
+            {
+                var project = await _projectRepository.GetByIdAsync(projectId);
+                if (project == null)
+                {
+                    TempData["Error"] = "Project not found.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var startDate = fromDate ?? new DateTime(DateTime.Today.Year, 1, 1);
+                var endDate = toDate ?? DateTime.Today;
+
+                var revenue = await _projectRepository.GetProjectRevenueAsync(projectId, startDate, endDate);
+                var expenses = await _projectRepository.GetProjectExpenseAsync(projectId, startDate, endDate);
+                var profitLoss = revenue - expenses;
+
+                var vouchers = await _voucherRepository.GetVouchersByProjectAsync(projectId);
+                vouchers = vouchers.Where(v => v.VoucherDate >= startDate && v.VoucherDate <= endDate);
+
+                ViewBag.Project = project;
+                ViewBag.FromDate = startDate;
+                ViewBag.ToDate = endDate;
+                ViewBag.Revenue = revenue;
+                ViewBag.Expenses = expenses;
+                ViewBag.ProfitLoss = profitLoss;
+                ViewBag.Vouchers = vouchers;
+
+                return View("ProfitLoss");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating project report");
+                TempData["Error"] = "Error generating report. Please try again.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
         // POST: Reports/ProfitLoss
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -287,21 +327,31 @@ namespace VoucherManagementSystem.Controllers
         {
             if (ModelState.IsValid)
             {
-                adjustment.CreatedBy = HttpContext.Session.GetString("Username") ?? "Admin";
-                adjustment.CreatedDate = DateTime.Now;
+                try
+                {
+                    adjustment.CreatedBy = HttpContext.Session.GetString("Username") ?? "Admin";
+                    adjustment.CreatedDate = DateTime.Now;
 
-                // Generate reference number
-                var count = await _context.CashAdjustments.CountAsync() + 1;
-                adjustment.ReferenceNumber = $"CASH-{(adjustment.AdjustmentType == CashAdjustmentType.CashIn ? "IN" : "OUT")}-{DateTime.Now:yyyyMMdd}-{count:D4}";
+                    // Generate reference number
+                    int count = 1;
+                    try { count = await _context.CashAdjustments.CountAsync() + 1; } catch { }
+                    adjustment.ReferenceNumber = $"CASH-{(adjustment.AdjustmentType == CashAdjustmentType.CashIn ? "IN" : "OUT")}-{DateTime.Now:yyyyMMdd}-{count:D4}";
 
-                _context.CashAdjustments.Add(adjustment);
-                await _context.SaveChangesAsync();
+                    _context.CashAdjustments.Add(adjustment);
+                    await _context.SaveChangesAsync();
 
-                TempData["Success"] = adjustment.AdjustmentType == CashAdjustmentType.CashIn
-                    ? $"Cash In of Rs. {adjustment.Amount:N0} added successfully!"
-                    : $"Cash Out of Rs. {adjustment.Amount:N0} recorded successfully!";
+                    TempData["Success"] = adjustment.AdjustmentType == CashAdjustmentType.CashIn
+                        ? $"Cash In of Rs. {adjustment.Amount:N0} added successfully!"
+                        : $"Cash Out of Rs. {adjustment.Amount:N0} recorded successfully!";
 
-                return RedirectToAction(nameof(CashStatement));
+                    return RedirectToAction(nameof(CashStatement));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error adding cash adjustment");
+                    TempData["Error"] = "Error: Please run migration first - dotnet ef migrations add AddCashAdjustment && dotnet ef database update";
+                    return RedirectToAction(nameof(CashStatement));
+                }
             }
 
             ViewBag.AdjustmentType = adjustment.AdjustmentType;
@@ -987,12 +1037,15 @@ namespace VoucherManagementSystem.Controllers
         // Helper method to get opening bank balance
         private async Task<decimal> GetBankOpeningBalanceAsync(int bankId, DateTime date)
         {
+            // Get initial bank balance from Bank model
+            var bank = await _bankRepository.GetByIdAsync(bankId);
+            decimal balance = bank?.Balance ?? 0;
+
             var previousVouchers = await _context.Vouchers
                 .Where(v => (v.BankCustomerPaidId == bankId || v.BankCustomerReceiverId == bankId) &&
                            v.VoucherDate < date)
                 .ToListAsync();
 
-            decimal balance = 0;
             foreach (var voucher in previousVouchers)
             {
                 // Money paid from bank (debit - reduces bank balance)
