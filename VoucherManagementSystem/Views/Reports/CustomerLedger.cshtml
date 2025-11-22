@@ -159,20 +159,24 @@ else
                                 string particulars = "";
 
                                 // Determine debit/credit based on voucher type and customer role
+                                // Purchase = CR (we owe the supplier/customer)
+                                // Sale = DR (customer owes us)
+                                // CashPaid = DR (we paid the customer, reduces what we owe)
+                                // CashReceived = CR (customer paid us, reduces what they owe)
                                 if (voucher.PurchasingCustomerId == customer.Id)
                                 {
                                     switch (voucher.VoucherType)
                                     {
                                         case VoucherManagementSystem.Models.VoucherType.Purchase:
-                                            debit = voucher.Amount;
+                                            credit = voucher.Amount;  // Purchase = CR (we owe them)
                                             particulars = $"Purchase - {voucher.Item?.Name ?? "N/A"} ({voucher.PurchasingCustomerDetails})";
                                             break;
                                         case VoucherManagementSystem.Models.VoucherType.CashPaid:
-                                            debit = voucher.Amount;
+                                            debit = voucher.Amount;   // Cash Paid = DR (reduces what we owe)
                                             particulars = $"Cash Paid ({voucher.PurchasingCustomerDetails})";
                                             break;
                                         case VoucherManagementSystem.Models.VoucherType.CCR:
-                                            debit = voucher.Amount;
+                                            debit = voucher.Amount;   // CCR transfer out = DR
                                             particulars = $"CCR - From {voucher.ReceivingCustomer?.Name ?? "N/A"}";
                                             break;
                                     }
@@ -183,15 +187,15 @@ else
                                     switch (voucher.VoucherType)
                                     {
                                         case VoucherManagementSystem.Models.VoucherType.Sale:
-                                            credit = voucher.Amount;
+                                            debit = voucher.Amount;   // Sale = DR (they owe us)
                                             particulars = $"Sale - {voucher.Item?.Name ?? "N/A"} ({voucher.ReceivingCustomerDetails})";
                                             break;
                                         case VoucherManagementSystem.Models.VoucherType.CashReceived:
-                                            credit = voucher.Amount;
+                                            credit = voucher.Amount;  // Cash Received = CR (reduces what they owe)
                                             particulars = $"Cash Received ({voucher.ReceivingCustomerDetails})";
                                             break;
                                         case VoucherManagementSystem.Models.VoucherType.CCR:
-                                            credit = voucher.Amount;
+                                            credit = voucher.Amount;  // CCR transfer in = CR
                                             particulars = $"CCR - To {voucher.PurchasingCustomer?.Name ?? "N/A"}";
                                             break;
                                     }

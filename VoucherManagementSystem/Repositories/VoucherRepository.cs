@@ -26,9 +26,9 @@ namespace VoucherManagementSystem.Repositories
                 _ => "VCH"
             };
 
-            var year = DateTime.Now.Year.ToString();
+            // Simple sequential numbering: PUR-1, PUR-2, SAL-1, etc.
             var lastVoucher = await _context.Vouchers
-                .Where(v => v.TransactionNumber.StartsWith($"{prefix}-{year}"))
+                .Where(v => v.TransactionNumber.StartsWith($"{prefix}-"))
                 .OrderByDescending(v => v.Id)
                 .FirstOrDefaultAsync();
 
@@ -42,7 +42,7 @@ namespace VoucherManagementSystem.Repositories
                 }
             }
 
-            return $"{prefix}-{year}-{nextNumber:D6}";
+            return $"{prefix}-{nextNumber}";
         }
 
         public async Task<IEnumerable<Voucher>> GetVouchersByTypeAsync(VoucherType type)

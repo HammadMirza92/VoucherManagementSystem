@@ -28,7 +28,11 @@
                     <label asp-for="VoucherDate" class="form-label">Voucher Date</label>
                     <input asp-for="VoucherDate" type="date" class="form-control" />
                 </div>
-                <div class="col-md-3 mb-3">
+                <div class="col-md-3 mb-3" id="projectSection">
+                    <label asp-for="ProjectId" class="form-label">Project</label>
+                    @Html.DropDownListFor(m => m.ProjectId, ViewBag.Projects as SelectList, "Select Project", new { @class = "form-select" })
+                </div>
+                <div class="col-md-3 mb-3" id="cashTypeSection">
                     <label asp-for="CashType" class="form-label">Cash Type</label>
                     <select asp-for="CashType" class="form-select" id="cashType">
                         <option value="">Select Type</option>
@@ -38,48 +42,54 @@
                         }
                     </select>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label asp-for="ProjectId" class="form-label">Project</label>
-                    @Html.DropDownListFor(m => m.ProjectId, ViewBag.Projects as SelectList, "Select Project", new { @class = "form-select" })
-                </div>
             </div>
 
             <div class="row" id="purchasingCustomerSection">
                 <div class="col-md-4 mb-3">
                     <label asp-for="PurchasingCustomerId" class="form-label">Purchasing Customer</label>
-                    @Html.DropDownListFor(m => m.PurchasingCustomerId, ViewBag.Customers as SelectList, "Select Customer", new { @class = "form-select", id = "purchasingCustomer" })
+                    <div class="input-group">
+                        @Html.DropDownListFor(m => m.PurchasingCustomerId, ViewBag.Customers as SelectList, "Select Customer", new { @class = "form-select", id = "purchasingCustomer" })
+                        <button type="button" class="btn btn-outline-secondary" id="copyPurchasingCustomerName" title="Copy customer name to details">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="col-md-8 mb-3">
                     <label asp-for="PurchasingCustomerDetails" class="form-label">Purchasing Customer Details</label>
-                    <input asp-for="PurchasingCustomerDetails" class="form-control" />
+                    <input asp-for="PurchasingCustomerDetails" class="form-control" id="purchasingCustomerDetails" />
                 </div>
             </div>
 
             <div class="row" id="receivingCustomerSection" style="display:none;">
                 <div class="col-md-4 mb-3">
                     <label asp-for="ReceivingCustomerId" class="form-label">Receiving Customer</label>
-                    @Html.DropDownListFor(m => m.ReceivingCustomerId, ViewBag.Customers as SelectList, "Select Customer", new { @class = "form-select", id = "receivingCustomer" })
+                    <div class="input-group">
+                        @Html.DropDownListFor(m => m.ReceivingCustomerId, ViewBag.Customers as SelectList, "Select Customer", new { @class = "form-select", id = "receivingCustomer" })
+                        <button type="button" class="btn btn-outline-secondary" id="copyReceivingCustomerName" title="Copy customer name to details">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="col-md-8 mb-3">
                     <label asp-for="ReceivingCustomerDetails" class="form-label">Receiving Customer Details</label>
-                    <input asp-for="ReceivingCustomerDetails" class="form-control" />
+                    <input asp-for="ReceivingCustomerDetails" class="form-control" id="receivingCustomerDetails" />
                 </div>
             </div>
 
             <div class="row" id="bankSection" style="display:none;">
-                <div class="col-md-3 mb-3">
+                <div class="col-md-3 mb-3" id="bankPaidSection">
                     <label asp-for="BankCustomerPaidId" class="form-label">Bank Customer Paid</label>
                     @Html.DropDownListFor(m => m.BankCustomerPaidId, ViewBag.Banks as SelectList, "Select Bank", new { @class = "form-select" })
                 </div>
-                <div class="col-md-3 mb-3">
+                <div class="col-md-3 mb-3" id="bankPaidDetailsSection">
                     <label asp-for="BankCustomerPaidDetails" class="form-label">Bank Paid Details</label>
                     <input asp-for="BankCustomerPaidDetails" class="form-control" />
                 </div>
-                <div class="col-md-3 mb-3">
+                <div class="col-md-3 mb-3" id="bankReceiverSection">
                     <label asp-for="BankCustomerReceiverId" class="form-label">Bank Customer Receiver</label>
                     @Html.DropDownListFor(m => m.BankCustomerReceiverId, ViewBag.Banks as SelectList, "Select Bank", new { @class = "form-select" })
                 </div>
-                <div class="col-md-3 mb-3">
+                <div class="col-md-3 mb-3" id="bankReceiverDetailsSection">
                     <label asp-for="BankCustomerReceiverDetails" class="form-label">Bank Receiver Details</label>
                     <input asp-for="BankCustomerReceiverDetails" class="form-control" />
                 </div>
@@ -123,7 +133,7 @@
                 </div>
                 <div class="col-md-2 mb-3">
                     <label asp-for="ExpenseHeadRate" class="form-label">Expense Head Rate</label>
-                    <input asp-for="ExpenseHeadRate" type="number" step="0.01" class="form-control" />
+                    <input asp-for="ExpenseHeadRate" type="number" step="0.01" class="form-control" id="expenseHeadRate" />
                 </div>
                 <div class="col-md-6 mb-3">
                     <label asp-for="ExpenseHeadDetails" class="form-label">Expense Head Details</label>
@@ -208,10 +218,24 @@
             $('#cashType').on('change', function() {
                 if ($(this).val() == 'Bank') {
                     $('#bankSection').show();
+                    // For Purchase voucher, hide Bank Receiver fields
+                    if (voucherType === 'Purchase') {
+                        $('#bankReceiverSection, #bankReceiverDetailsSection').hide();
+                    } else {
+                        $('#bankReceiverSection, #bankReceiverDetailsSection').show();
+                    }
                 } else {
                     $('#bankSection').hide();
                 }
             });
+
+            // Show bank section on load if CashType is Bank
+            if ('@Model.CashType' === 'Bank') {
+                $('#bankSection').show();
+                if (voucherType === 'Purchase') {
+                    $('#bankReceiverSection, #bankReceiverDetailsSection').hide();
+                }
+            }
 
             // MON calculation: Mon * 40 = Weight, Kat = 0
             $('#mon').on('input', function() {
@@ -244,8 +268,13 @@
             function calculateAmount() {
                 var qty = parseFloat($('#quantity').val()) || 0;
                 var rate = parseFloat($('#rate').val()) || 0;
-                var amount = qty * rate;
-                $('#amount').val(amount.toFixed(2));
+                var expenseRate = parseFloat($('#expenseHeadRate').val()) || 0;
+
+                if (voucherType === 'Purchase' || voucherType === 'Sale') {
+                    $('#amount').val((qty * rate + expenseRate).toFixed(2));
+                } else {
+                    $('#amount').val((qty * rate).toFixed(2));
+                }
             }
 
             // Get item rate for customer (for Sales - Receiving Customer)
@@ -274,17 +303,26 @@
                 }
             });
 
-            // Sync Expense Head Rate with Amount for Expense vouchers
-            $('#ExpenseHeadRate').on('input', function() {
+            // Sync Expense Head Rate with Amount for Expense, Purchase, and Sale vouchers
+            $('#expenseHeadRate').on('input', function() {
                 var expenseRate = parseFloat($(this).val()) || 0;
-                $('#amount').val(expenseRate.toFixed(2));
+
+                if (voucherType === 'Expense') {
+                    // For Expense voucher, expense rate directly sets amount
+                    $('#amount').val(expenseRate.toFixed(2));
+                } else if (voucherType === 'Purchase' || voucherType === 'Sale') {
+                    // For Purchase/Sale, add expense rate to calculated amount (qty * rate)
+                    var qty = parseFloat($('#quantity').val()) || 0;
+                    var rate = parseFloat($('#rate').val()) || 0;
+                    var baseAmount = qty * rate;
+                    $('#amount').val((baseAmount + expenseRate).toFixed(2));
+                }
             });
 
             $('#amount').on('input', function() {
-                var voucherType = '@Model.VoucherType';
                 if (voucherType === 'Expense') {
                     var amount = parseFloat($(this).val()) || 0;
-                    $('#ExpenseHeadRate').val(amount.toFixed(2));
+                    $('#expenseHeadRate').val(amount.toFixed(2));
                 }
             });
 
@@ -292,12 +330,28 @@
             if ($('#mon').val()) {
                 $('#mon').trigger('input');
             }
+
+            // Copy customer name to details
+            $('#copyPurchasingCustomerName').on('click', function() {
+                var selectedText = $('#purchasingCustomer option:selected').text();
+                if (selectedText && selectedText !== 'Select Customer') {
+                    $('#purchasingCustomerDetails').val(selectedText);
+                }
+            });
+
+            $('#copyReceivingCustomerName').on('click', function() {
+                var selectedText = $('#receivingCustomer option:selected').text();
+                if (selectedText && selectedText !== 'Select Customer') {
+                    $('#receivingCustomerDetails').val(selectedText);
+                }
+            });
         });
 
         function configureFormForVoucherType(type) {
             // Reset all sections
             $('#purchasingCustomerSection, #receivingCustomerSection, #bankSection, #itemSection, #expenseSection').hide();
-            $('#rateSection, #stockIncludeSection').show();
+            $('#rateSection, #stockIncludeSection, #projectSection, #cashTypeSection').show();
+            $('.col-md-3.mb-3:has(label[for="GariNo"])').show();
 
             switch(type) {
                 case 'Purchase':
@@ -306,7 +360,7 @@
                     break;
                 case 'Sale':
                     $('#receivingCustomerSection, #itemSection, #expenseSection').show();
-                   $('#stockIncludeSection').show();
+                    $('#stockIncludeSection').show();
                     break;
                 case 'Expense':
                     $('#expenseSection').show();
@@ -314,18 +368,32 @@
                     break;
                 case 'Hazri':
                     $('#expenseSection, #itemSection').show();
+                    $('#cashTypeSection').hide();
+                    $('.col-md-2.mb-3:has(label[for="Mon"])').hide();
+                    $('.col-md-2.mb-3:has(label[for="Weight"])').hide();
+                    $('.col-md-2.mb-3:has(label[for="Kat"])').hide();
+                    $('.col-md-2.mb-3:has(label[for="ExpenseHeadRate"])').hide();
+                    $('#stockIncludeSection').hide();
                     break;
                 case 'CashPaid':
                     $('#purchasingCustomerSection').show();
+                    $('#rateSection, #stockIncludeSection, #projectSection').hide();
+                    $('.col-md-3.mb-3:has(label[for="GariNo"])').hide();
                     break;
                 case 'CashReceived':
                     $('#receivingCustomerSection').show();
+                    $('#rateSection, #stockIncludeSection').hide();
+                    $('.col-md-3.mb-3:has(label[for="GariNo"])').hide();
                     break;
                 case 'CCR':
                     $('#purchasingCustomerSection, #receivingCustomerSection').show();
+                    $('#rateSection, #stockIncludeSection, #cashTypeSection, #projectSection').hide();
+                    $('.col-md-3.mb-3:has(label[for="GariNo"])').hide();
                     break;
                 case 'BCR':
                     $('#bankSection').show();
+                    $('#rateSection, #stockIncludeSection, #cashTypeSection, #projectSection').hide();
+                    $('.col-md-3.mb-3:has(label[for="GariNo"])').hide();
                     break;
             }
         }

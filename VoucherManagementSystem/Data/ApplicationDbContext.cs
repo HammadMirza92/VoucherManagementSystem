@@ -18,6 +18,7 @@ namespace VoucherManagementSystem.Data
         public DbSet<ExpenseHead> ExpenseHeads { get; set; }
         public DbSet<Project> Projects { get; set; }
         public DbSet<CustomerItemRate> CustomerItemRates { get; set; }
+        public DbSet<CashAdjustment> CashAdjustments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -107,6 +108,11 @@ namespace VoucherManagementSystem.Data
             // Bank configurations
             modelBuilder.Entity<Bank>()
                 .Property(b => b.Balance)
+                .HasPrecision(18, 2);
+
+            // CashAdjustment configurations
+            modelBuilder.Entity<CashAdjustment>()
+                .Property(c => c.Amount)
                 .HasPrecision(18, 2);
 
             // ExpenseHead configurations

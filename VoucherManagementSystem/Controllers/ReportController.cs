@@ -157,6 +157,201 @@ namespace VoucherManagementSystem.Controllers
             }
         }
 
+        // GET: Reports/CashStatement - Tracks cash from vouchers (CashType = Cash)
+        public async Task<IActionResult> CashStatement(DateTime? fromDate, DateTime? toDate, int? customerId, string? voucherType)
+        {
+            try
+            {
+                var endDate = toDate ?? DateTime.Today;
+                var startDate = fromDate ?? DateTime.Today.AddMonths(-1);
+
+                // Get customers for filter dropdown
+                ViewBag.Customers = new SelectList(await _customerRepository.GetActiveCustomersAsync(), "Id", "Name", customerId);
+
+                // Voucher types for filter
+                var voucherTypes = new List<SelectListItem>
+                {
+                    new SelectListItem { Value = "", Text = "-- All Types --" },
+                    new SelectListItem { Value = "Sale", Text = "Sale" },
+                    new SelectListItem { Value = "Purchase", Text = "Purchase" },
+                    new SelectListItem { Value = "CashReceived", Text = "Cash Received" },
+                    new SelectListItem { Value = "CashPaid", Text = "Cash Paid" },
+                    new SelectListItem { Value = "Expense", Text = "Expense" },
+                    new SelectListItem { Value = "Hazri", Text = "Hazri" }
+                };
+                ViewBag.VoucherTypes = new SelectList(voucherTypes, "Value", "Text", voucherType);
+                ViewBag.SelectedVoucherType = voucherType;
+
+                // Build query for cash vouchers
+                var query = _context.Vouchers
+                    .Include(v => v.PurchasingCustomer)
+                    .Include(v => v.ReceivingCustomer)
+                    .Include(v => v.Item)
+                    .Include(v => v.ExpenseHead)
+                    .Where(v => v.CashType == CashType.Cash &&
+                               v.VoucherDate >= startDate && v.VoucherDate <= endDate.AddDays(1));
+
+                // Apply customer filter if selected
+                if (customerId.HasValue)
+                {
+                    query = query.Where(v => v.PurchasingCustomerId == customerId || v.ReceivingCustomerId == customerId);
+                    ViewBag.SelectedCustomerId = customerId;
+                    ViewBag.SelectedCustomer = await _customerRepository.GetByIdAsync(customerId.Value);
+                }
+
+                // Apply voucher type filter if selected
+                if (!string.IsNullOrEmpty(voucherType) && Enum.TryParse<VoucherType>(voucherType, out var vType))
+                {
+                    query = query.Where(v => v.VoucherType == vType);
+                }
+
+                var vouchers = await query.OrderBy(v => v.VoucherDate).ThenBy(v => v.Id).ToListAsync();
+
+                // Get cash adjustments for the period
+                var cashAdjustments = await _context.CashAdjustments
+                    .Where(a => a.AdjustmentDate >= startDate && a.AdjustmentDate <= endDate.AddDays(1))
+                    .OrderBy(a => a.AdjustmentDate)
+                    .ToListAsync();
+
+                // Calculate opening balance (all cash transactions before start date)
+                var openingBalance = await GetCashOpeningBalanceAsync(startDate, customerId);
+
+                // Calculate totals from vouchers
+                decimal totalReceipts = 0;
+                decimal totalPayments = 0;
+
+                foreach (var v in vouchers)
+                {
+                    switch (v.VoucherType)
+                    {
+                        case VoucherType.Sale:
+                        case VoucherType.CashReceived:
+                            totalReceipts += v.Amount;
+                            break;
+                        case VoucherType.Purchase:
+                        case VoucherType.Expense:
+                        case VoucherType.CashPaid:
+                        case VoucherType.Hazri:
+                            totalPayments += v.Amount;
+                            break;
+                    }
+                }
+
+                // Add cash adjustments to totals
+                foreach (var adj in cashAdjustments)
+                {
+                    if (adj.AdjustmentType == CashAdjustmentType.CashIn)
+                        totalReceipts += adj.Amount;
+                    else
+                        totalPayments += adj.Amount;
+                }
+
+                ViewBag.FromDate = startDate;
+                ViewBag.ToDate = endDate;
+                ViewBag.OpeningBalance = openingBalance;
+                ViewBag.TotalReceipts = totalReceipts;
+                ViewBag.TotalPayments = totalPayments;
+                ViewBag.ClosingBalance = openingBalance + totalReceipts - totalPayments;
+                ViewBag.Vouchers = vouchers;
+                ViewBag.CashAdjustments = cashAdjustments;
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating cash statement");
+                TempData["Error"] = "Error generating cash statement.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // GET: Reports/AddCashAdjustment
+        public IActionResult AddCashAdjustment(string type = "CashIn")
+        {
+            ViewBag.AdjustmentType = type == "CashOut" ? CashAdjustmentType.CashOut : CashAdjustmentType.CashIn;
+            return View(new CashAdjustment { AdjustmentType = type == "CashOut" ? CashAdjustmentType.CashOut : CashAdjustmentType.CashIn });
+        }
+
+        // POST: Reports/AddCashAdjustment
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddCashAdjustment(CashAdjustment adjustment)
+        {
+            if (ModelState.IsValid)
+            {
+                adjustment.CreatedBy = HttpContext.Session.GetString("Username") ?? "Admin";
+                adjustment.CreatedDate = DateTime.Now;
+
+                // Generate reference number
+                var count = await _context.CashAdjustments.CountAsync() + 1;
+                adjustment.ReferenceNumber = $"CASH-{(adjustment.AdjustmentType == CashAdjustmentType.CashIn ? "IN" : "OUT")}-{DateTime.Now:yyyyMMdd}-{count:D4}";
+
+                _context.CashAdjustments.Add(adjustment);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = adjustment.AdjustmentType == CashAdjustmentType.CashIn
+                    ? $"Cash In of Rs. {adjustment.Amount:N0} added successfully!"
+                    : $"Cash Out of Rs. {adjustment.Amount:N0} recorded successfully!";
+
+                return RedirectToAction(nameof(CashStatement));
+            }
+
+            ViewBag.AdjustmentType = adjustment.AdjustmentType;
+            return View(adjustment);
+        }
+
+        // Helper method to get opening cash balance
+        private async Task<decimal> GetCashOpeningBalanceAsync(DateTime date, int? customerId = null)
+        {
+            decimal balance = 0;
+
+            // Get voucher transactions before date
+            var voucherQuery = _context.Vouchers
+                .Where(v => v.CashType == CashType.Cash && v.VoucherDate < date);
+
+            if (customerId.HasValue)
+            {
+                voucherQuery = voucherQuery.Where(v => v.PurchasingCustomerId == customerId || v.ReceivingCustomerId == customerId);
+            }
+
+            var previousVouchers = await voucherQuery.ToListAsync();
+
+            foreach (var v in previousVouchers)
+            {
+                switch (v.VoucherType)
+                {
+                    case VoucherType.Sale:
+                    case VoucherType.CashReceived:
+                        balance += v.Amount;
+                        break;
+                    case VoucherType.Purchase:
+                    case VoucherType.Expense:
+                    case VoucherType.CashPaid:
+                    case VoucherType.Hazri:
+                        balance -= v.Amount;
+                        break;
+                }
+            }
+
+            // Add cash adjustments before date (only if no customer filter)
+            if (!customerId.HasValue)
+            {
+                var adjustments = await _context.CashAdjustments
+                    .Where(a => a.AdjustmentDate < date)
+                    .ToListAsync();
+
+                foreach (var adj in adjustments)
+                {
+                    if (adj.AdjustmentType == CashAdjustmentType.CashIn)
+                        balance += adj.Amount;
+                    else
+                        balance -= adj.Amount;
+                }
+            }
+
+            return balance;
+        }
+
         // GET: Reports/ExportToExcel
         public async Task<IActionResult> ExportToExcel(string reportType, int? id, DateTime? fromDate, DateTime? toDate)
         {
@@ -306,6 +501,7 @@ namespace VoucherManagementSystem.Controllers
                         decimal totalDebit = 0;
                         decimal totalCredit = 0;
 
+                        // NEW DR/CR Logic: Purchase=CR, Sale=DR
                         foreach (var voucher in vouchers)
                         {
                             decimal debit = 0;
@@ -317,15 +513,15 @@ namespace VoucherManagementSystem.Controllers
                                 switch (voucher.VoucherType)
                                 {
                                     case VoucherType.Purchase:
-                                        debit = voucher.Amount;
+                                        credit = voucher.Amount;  // Purchase = CR
                                         particulars = $"Purchase - {voucher.Item?.Name ?? "N/A"}";
                                         break;
                                     case VoucherType.CashPaid:
-                                        debit = voucher.Amount;
+                                        debit = voucher.Amount;   // CashPaid = DR
                                         particulars = "Cash Paid";
                                         break;
                                     case VoucherType.CCR:
-                                        debit = voucher.Amount;
+                                        debit = voucher.Amount;   // CCR = DR
                                         particulars = $"CCR - From {voucher.ReceivingCustomer?.Name ?? "N/A"}";
                                         break;
                                 }
@@ -336,15 +532,15 @@ namespace VoucherManagementSystem.Controllers
                                 switch (voucher.VoucherType)
                                 {
                                     case VoucherType.Sale:
-                                        credit = voucher.Amount;
+                                        debit = voucher.Amount;   // Sale = DR
                                         particulars = $"Sale - {voucher.Item?.Name ?? "N/A"}";
                                         break;
                                     case VoucherType.CashReceived:
-                                        credit = voucher.Amount;
+                                        credit = voucher.Amount;  // CashReceived = CR
                                         particulars = "Cash Received";
                                         break;
                                     case VoucherType.CCR:
-                                        credit = voucher.Amount;
+                                        credit = voucher.Amount;  // CCR = CR
                                         particulars = $"CCR - To {voucher.PurchasingCustomer?.Name ?? "N/A"}";
                                         break;
                                 }
@@ -667,33 +863,40 @@ namespace VoucherManagementSystem.Controllers
                     .ToListAsync();
 
                 // Calculate totals
+                // NEW DR/CR Logic: Purchase=CR, Sale=DR
                 decimal totalDebit = 0;
                 decimal totalCredit = 0;
 
                 foreach (var voucher in vouchers)
                 {
-                    // Customer received money (Debit - they owe us)
+                    // Purchase = CR (we owe the supplier)
+                    // CashPaid = DR (we paid, reduces what we owe)
                     if (voucher.PurchasingCustomerId == customerId.Value)
                     {
                         switch (voucher.VoucherType)
                         {
                             case VoucherType.Purchase:
+                                totalCredit += voucher.Amount;  // Purchase = CR
+                                break;
                             case VoucherType.CashPaid:
                             case VoucherType.CCR:
-                                totalDebit += voucher.Amount;
+                                totalDebit += voucher.Amount;   // CashPaid = DR
                                 break;
                         }
                     }
 
-                    // Customer paid money (Credit - we owe them)
+                    // Sale = DR (customer owes us)
+                    // CashReceived = CR (customer paid, reduces what they owe)
                     if (voucher.ReceivingCustomerId == customerId.Value)
                     {
                         switch (voucher.VoucherType)
                         {
                             case VoucherType.Sale:
+                                totalDebit += voucher.Amount;   // Sale = DR
+                                break;
                             case VoucherType.CashReceived:
                             case VoucherType.CCR:
-                                totalCredit += voucher.Amount;
+                                totalCredit += voucher.Amount;  // CashReceived = CR
                                 break;
                         }
                     }
@@ -720,6 +923,7 @@ namespace VoucherManagementSystem.Controllers
         }
 
         // Helper method to get opening balance for customer
+        // NEW DR/CR Logic: Purchase=CR, Sale=DR
         private async Task<decimal> GetCustomerOpeningBalanceAsync(int customerId, DateTime date)
         {
             var previousVouchers = await _context.Vouchers
@@ -730,28 +934,34 @@ namespace VoucherManagementSystem.Controllers
             decimal balance = 0;
             foreach (var voucher in previousVouchers)
             {
-                // Customer received money (Debit - they owe us)
+                // Purchase = CR (we owe them) - decreases balance
+                // CashPaid = DR (we paid) - increases balance
                 if (voucher.PurchasingCustomerId == customerId)
                 {
                     switch (voucher.VoucherType)
                     {
                         case VoucherType.Purchase:
+                            balance -= voucher.Amount;  // CR decreases balance
+                            break;
                         case VoucherType.CashPaid:
                         case VoucherType.CCR:
-                            balance += voucher.Amount;
+                            balance += voucher.Amount;  // DR increases balance
                             break;
                     }
                 }
 
-                // Customer paid money (Credit - we owe them)
+                // Sale = DR (they owe us) - increases balance
+                // CashReceived = CR (they paid) - decreases balance
                 if (voucher.ReceivingCustomerId == customerId)
                 {
                     switch (voucher.VoucherType)
                     {
                         case VoucherType.Sale:
+                            balance += voucher.Amount;  // DR increases balance
+                            break;
                         case VoucherType.CashReceived:
                         case VoucherType.CCR:
-                            balance -= voucher.Amount;
+                            balance -= voucher.Amount;  // CR decreases balance
                             break;
                     }
                 }

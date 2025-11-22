@@ -106,9 +106,27 @@
                             </span>
                         </td>
                         <td>@item.VoucherDate.ToString("dd-MMM-yyyy")</td>
-                        <td>@(item.PurchasingCustomer?.Name ?? item.ReceivingCustomer?.Name)</td>
+                        <td>
+                            @{
+                                var customerId = item.PurchasingCustomerId ?? item.ReceivingCustomerId;
+                                var customerName = item.PurchasingCustomer?.Name ?? item.ReceivingCustomer?.Name;
+                            }
+                            @if (customerId.HasValue && !string.IsNullOrEmpty(customerName))
+                            {
+                                <a asp-controller="Reports" asp-action="CustomerLedger" asp-route-customerId="@customerId" class="text-decoration-none" title="View Customer Ledger">
+                                    @customerName
+                                </a>
+                            }
+                        </td>
                         <td>@item.Item?.Name</td>
-                        <td>@item.Project?.Name</td>
+                        <td>
+                            @if (item.ProjectId.HasValue && item.Project != null)
+                            {
+                                <a asp-controller="Reports" asp-action="ProjectReport" asp-route-projectId="@item.ProjectId" class="text-decoration-none" title="View Project Report">
+                                    @item.Project.Name
+                                </a>
+                            }
+                        </td>
                         <td class="text-end">@string.Format("{0:N0}", item.Amount)</td>
                         <td>
                             <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">

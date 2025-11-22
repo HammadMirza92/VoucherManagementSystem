@@ -88,6 +88,20 @@
 <div class="row">
     <div class="col-md-6">
         <div class="card mb-3">
+            <div class="card-header bg-success text-white">
+                <h5><i class="bi bi-cash-stack"></i> Cash Statement</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">View detailed cash in hand transaction statements with date filters.</p>
+                <a asp-action="CashStatement" class="btn btn-success w-100">
+                    <i class="bi bi-file-earmark-text"></i> View Cash Statement
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-3">
             <div class="card-header bg-info text-white">
                 <h5><i class="bi bi-box-seam"></i> Stock Report</h5>
             </div>
@@ -99,7 +113,9 @@
             </div>
         </div>
     </div>
+</div>
 
+<div class="row">
     <div class="col-md-6">
         <div class="card mb-3">
             <div class="card-header bg-danger text-white">
@@ -113,7 +129,6 @@
             </div>
         </div>
     </div>
-</div>
 
 <div class="row">
     <div class="col-md-6">
