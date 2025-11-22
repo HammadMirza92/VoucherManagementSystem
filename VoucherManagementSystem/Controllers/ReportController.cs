@@ -1296,22 +1296,32 @@ namespace VoucherManagementSystem.Controllers
 
                 foreach (var item in items)
                 {
+                    // Get purchases (with or without StockInclude flag)
                     var purchases = await _context.Vouchers
-                        .Where(v => v.ItemId == item.Id && v.VoucherType == VoucherType.Purchase && v.StockInclude == true && v.VoucherDate < date)
+                        .Where(v => v.ItemId == item.Id && v.VoucherType == VoucherType.Purchase && v.VoucherDate < date)
                         .ToListAsync();
 
+                    // Get sales (with or without StockInclude flag)
                     var sales = await _context.Vouchers
-                        .Where(v => v.ItemId == item.Id && v.VoucherType == VoucherType.Sale && v.StockInclude == true && v.VoucherDate < date)
+                        .Where(v => v.ItemId == item.Id && v.VoucherType == VoucherType.Sale && v.VoucherDate < date)
                         .ToListAsync();
 
-                    decimal purchaseQty = purchases.Sum(p => p.Quantity ?? 0);
-                    decimal saleQty = sales.Sum(s => s.Quantity ?? 0);
-                    decimal currentQty = purchaseQty - saleQty;
+                    // Filter for stock calculations (only where StockInclude is true or null)
+                    var stockPurchases = purchases.Where(p => p.StockInclude == true).ToList();
+                    var stockSales = sales.Where(s => s.StockInclude == true).ToList();
+
+                    decimal purchaseQty = stockPurchases.Sum(p => p.Quantity ?? 0);
+                    decimal saleQty = stockSales.Sum(s => s.Quantity ?? 0);
+
+                    // Include item's initial CurrentStock
+                    decimal initialStock = item.CurrentStock;
+                    decimal currentQty = initialStock + purchaseQty - saleQty;
 
                     if (currentQty > 0)
                     {
-                        decimal totalPurchaseAmount = purchases.Sum(p => p.Amount);
-                        decimal avgRate = purchaseQty > 0 ? totalPurchaseAmount / purchaseQty : 0;
+                        // Calculate average rate from purchases, or use item's DefaultRate if no purchases
+                        decimal totalPurchaseAmount = stockPurchases.Sum(p => p.Amount);
+                        decimal avgRate = purchaseQty > 0 ? totalPurchaseAmount / purchaseQty : item.DefaultRate;
                         decimal stockValue = currentQty * avgRate;
                         totalStockValue += stockValue;
 
