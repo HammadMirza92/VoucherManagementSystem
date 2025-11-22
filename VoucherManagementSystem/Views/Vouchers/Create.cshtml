@@ -216,14 +216,7 @@
             $('#quantity, #rate').on('input change', function() {
                 var qty = parseFloat($('#quantity').val()) || 0;
                 var rate = parseFloat($('#rate').val()) || 0;
-                var expenseRate = parseFloat($('#expenseHeadRate').val()) || 0;
-                var voucherType = '@Model.VoucherType';
-
-                if (voucherType === 'Purchase' || voucherType === 'Sale') {
-                    $('#amount').val((qty * rate + expenseRate).toFixed(2));
-                } else {
-                    $('#amount').val((qty * rate).toFixed(2));
-                }
+                $('#amount').val((qty * rate).toFixed(2));
             });
 
             // Get item rate based on Receiving Customer (for Sale) or Purchasing Customer
@@ -247,21 +240,16 @@
                 }
             });
 
-            // Sync Expense Head Rate with Amount for Expense, Purchase, and Sale vouchers
+            // Sync Expense Head Rate with Amount ONLY for Expense vouchers
             $('#expenseHeadRate').on('input', function() {
                 var voucherType = '@Model.VoucherType';
                 var expenseRate = parseFloat($(this).val()) || 0;
 
                 if (voucherType === 'Expense') {
-                    // For Expense voucher, expense rate directly sets amount
+                    // For Expense voucher only, expense rate directly sets amount
                     $('#amount').val(expenseRate.toFixed(2));
-                } else if (voucherType === 'Purchase' || voucherType === 'Sale') {
-                    // For Purchase/Sale, add expense rate to calculated amount (qty * rate)
-                    var qty = parseFloat($('#quantity').val()) || 0;
-                    var rate = parseFloat($('#rate').val()) || 0;
-                    var baseAmount = qty * rate;
-                    $('#amount').val((baseAmount + expenseRate).toFixed(2));
                 }
+                // For Purchase/Sale vouchers, expense rate does NOT affect amount
             });
 
             $('#amount').on('input', function() {

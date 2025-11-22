@@ -207,11 +207,19 @@ namespace VoucherManagementSystem.Controllers
 
                 var vouchers = await query.OrderBy(v => v.VoucherDate).ThenBy(v => v.Id).ToListAsync();
 
-                // Get cash adjustments for the period
-                var cashAdjustments = await _context.CashAdjustments
-                    .Where(a => a.AdjustmentDate >= startDate && a.AdjustmentDate <= endDate.AddDays(1))
-                    .OrderBy(a => a.AdjustmentDate)
-                    .ToListAsync();
+                // Get cash adjustments for the period (handle if table doesn't exist yet)
+                var cashAdjustments = new List<CashAdjustment>();
+                try
+                {
+                    cashAdjustments = await _context.CashAdjustments
+                        .Where(a => a.AdjustmentDate >= startDate && a.AdjustmentDate <= endDate.AddDays(1))
+                        .OrderBy(a => a.AdjustmentDate)
+                        .ToListAsync();
+                }
+                catch
+                {
+                    // Table doesn't exist yet - will be created after migration
+                }
 
                 // Calculate opening balance (all cash transactions before start date)
                 var openingBalance = await GetCashOpeningBalanceAsync(startDate, customerId);
@@ -336,16 +344,23 @@ namespace VoucherManagementSystem.Controllers
             // Add cash adjustments before date (only if no customer filter)
             if (!customerId.HasValue)
             {
-                var adjustments = await _context.CashAdjustments
-                    .Where(a => a.AdjustmentDate < date)
-                    .ToListAsync();
-
-                foreach (var adj in adjustments)
+                try
                 {
-                    if (adj.AdjustmentType == CashAdjustmentType.CashIn)
-                        balance += adj.Amount;
-                    else
-                        balance -= adj.Amount;
+                    var adjustments = await _context.CashAdjustments
+                        .Where(a => a.AdjustmentDate < date)
+                        .ToListAsync();
+
+                    foreach (var adj in adjustments)
+                    {
+                        if (adj.AdjustmentType == CashAdjustmentType.CashIn)
+                            balance += adj.Amount;
+                        else
+                            balance -= adj.Amount;
+                    }
+                }
+                catch
+                {
+                    // Table doesn't exist yet - will be created after migration
                 }
             }
 
@@ -994,6 +1009,378 @@ namespace VoucherManagementSystem.Controllers
             }
             return balance;
         }
+
+        // GET: Reports/StockTrackReport - Track which customer purchased what and when
+        public async Task<IActionResult> StockTrackReport(DateTime? fromDate, DateTime? toDate, int? itemId, int? customerId)
+        {
+            try
+            {
+                var startDate = fromDate ?? DateTime.Today.AddMonths(-1);
+                var endDate = toDate ?? DateTime.Today;
+
+                ViewBag.Items = new SelectList(await _itemRepository.GetActiveItemsAsync(), "Id", "Name", itemId);
+                ViewBag.Customers = new SelectList(await _customerRepository.GetActiveCustomersAsync(), "Id", "Name", customerId);
+
+                var query = _context.Vouchers
+                    .Include(v => v.Item)
+                    .Include(v => v.PurchasingCustomer)
+                    .Include(v => v.ReceivingCustomer)
+                    .Include(v => v.Project)
+                    .Where(v => (v.VoucherType == VoucherType.Purchase || v.VoucherType == VoucherType.Sale) &&
+                               v.ItemId != null &&
+                               v.VoucherDate >= startDate && v.VoucherDate <= endDate.AddDays(1));
+
+                if (itemId.HasValue)
+                {
+                    query = query.Where(v => v.ItemId == itemId);
+                }
+
+                if (customerId.HasValue)
+                {
+                    query = query.Where(v => v.PurchasingCustomerId == customerId || v.ReceivingCustomerId == customerId);
+                }
+
+                var transactions = await query.OrderByDescending(v => v.VoucherDate).ThenByDescending(v => v.Id).ToListAsync();
+
+                ViewBag.FromDate = startDate;
+                ViewBag.ToDate = endDate;
+                ViewBag.SelectedItemId = itemId;
+                ViewBag.SelectedCustomerId = customerId;
+                ViewBag.Transactions = transactions;
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating stock track report");
+                TempData["Error"] = "Error generating stock track report.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // GET: Reports/AllExpensesReport - All expenses in one page
+        public async Task<IActionResult> AllExpensesReport(DateTime? fromDate, DateTime? toDate, int? expenseHeadId)
+        {
+            try
+            {
+                var startDate = fromDate ?? DateTime.Today.AddMonths(-1);
+                var endDate = toDate ?? DateTime.Today;
+
+                ViewBag.ExpenseHeads = new SelectList(await _expenseHeadRepository.GetActiveExpenseHeadsAsync(), "Id", "Name", expenseHeadId);
+
+                var query = _context.Vouchers
+                    .Include(v => v.ExpenseHead)
+                    .Include(v => v.Project)
+                    .Include(v => v.PurchasingCustomer)
+                    .Where(v => (v.VoucherType == VoucherType.Expense || v.VoucherType == VoucherType.Hazri) &&
+                               v.VoucherDate >= startDate && v.VoucherDate <= endDate.AddDays(1));
+
+                if (expenseHeadId.HasValue)
+                {
+                    query = query.Where(v => v.ExpenseHeadId == expenseHeadId);
+                }
+
+                var expenses = await query.OrderByDescending(v => v.VoucherDate).ThenByDescending(v => v.Id).ToListAsync();
+
+                // Group by expense head for summary
+                var expenseSummary = expenses
+                    .GroupBy(e => e.ExpenseHead?.Name ?? "Unknown")
+                    .Select(g => new { ExpenseHead = g.Key, Total = g.Sum(e => e.Amount) })
+                    .OrderByDescending(x => x.Total)
+                    .ToList();
+
+                ViewBag.FromDate = startDate;
+                ViewBag.ToDate = endDate;
+                ViewBag.SelectedExpenseHeadId = expenseHeadId;
+                ViewBag.Expenses = expenses;
+                ViewBag.ExpenseSummary = expenseSummary;
+                ViewBag.TotalExpenses = expenses.Sum(e => e.Amount);
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating expenses report");
+                TempData["Error"] = "Error generating expenses report.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // GET: Reports/AllProjectsReport - All projects summary
+        public async Task<IActionResult> AllProjectsReport(DateTime? fromDate, DateTime? toDate)
+        {
+            try
+            {
+                var startDate = fromDate ?? new DateTime(DateTime.Today.Year, 1, 1);
+                var endDate = toDate ?? DateTime.Today;
+
+                var projects = await _projectRepository.GetActiveProjectsAsync();
+                var projectReports = new List<ProjectReportItem>();
+
+                foreach (var project in projects)
+                {
+                    var vouchers = await _context.Vouchers
+                        .Where(v => v.ProjectId == project.Id &&
+                                   v.VoucherDate >= startDate && v.VoucherDate <= endDate.AddDays(1))
+                        .ToListAsync();
+
+                    var revenue = vouchers.Where(v => v.VoucherType == VoucherType.Sale).Sum(v => v.Amount);
+                    var purchases = vouchers.Where(v => v.VoucherType == VoucherType.Purchase).Sum(v => v.Amount);
+                    var expenses = vouchers.Where(v => v.VoucherType == VoucherType.Expense || v.VoucherType == VoucherType.Hazri).Sum(v => v.Amount);
+
+                    projectReports.Add(new ProjectReportItem
+                    {
+                        Project = project,
+                        Revenue = revenue,
+                        Purchases = purchases,
+                        Expenses = expenses,
+                        ProfitLoss = revenue - purchases - expenses,
+                        VoucherCount = vouchers.Count
+                    });
+                }
+
+                ViewBag.FromDate = startDate;
+                ViewBag.ToDate = endDate;
+                ViewBag.ProjectReports = projectReports.OrderByDescending(p => p.Revenue).ToList();
+                ViewBag.TotalRevenue = projectReports.Sum(p => p.Revenue);
+                ViewBag.TotalPurchases = projectReports.Sum(p => p.Purchases);
+                ViewBag.TotalExpenses = projectReports.Sum(p => p.Expenses);
+                ViewBag.TotalProfitLoss = projectReports.Sum(p => p.ProfitLoss);
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating projects report");
+                TempData["Error"] = "Error generating projects report.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // GET: Reports/AllCustomersReport - Customers receivables and payables
+        public async Task<IActionResult> AllCustomersReport(DateTime? asOfDate)
+        {
+            try
+            {
+                var date = asOfDate ?? DateTime.Today.AddDays(1);
+
+                var customers = await _customerRepository.GetActiveCustomersAsync();
+                var customerReports = new List<CustomerReportItem>();
+
+                foreach (var customer in customers)
+                {
+                    // Calculate balance based on DR/CR logic
+                    // Purchase = CR (we owe supplier), Sale = DR (customer owes us)
+                    // CashPaid = DR (reduces what we owe), CashReceived = CR (reduces what they owe)
+                    var vouchers = await _context.Vouchers
+                        .Where(v => (v.PurchasingCustomerId == customer.Id || v.ReceivingCustomerId == customer.Id) &&
+                                   v.VoucherDate < date)
+                        .ToListAsync();
+
+                    decimal toReceive = 0; // Amount customer owes us (DR)
+                    decimal toPay = 0;     // Amount we owe to supplier (CR)
+
+                    foreach (var v in vouchers)
+                    {
+                        if (v.ReceivingCustomerId == customer.Id)
+                        {
+                            // Sale or CashReceived to this customer
+                            if (v.VoucherType == VoucherType.Sale)
+                                toReceive += v.Amount; // Customer owes us
+                            else if (v.VoucherType == VoucherType.CashReceived)
+                                toReceive -= v.Amount; // Customer paid us
+                        }
+
+                        if (v.PurchasingCustomerId == customer.Id)
+                        {
+                            // Purchase or CashPaid to this supplier
+                            if (v.VoucherType == VoucherType.Purchase)
+                                toPay += v.Amount; // We owe supplier
+                            else if (v.VoucherType == VoucherType.CashPaid)
+                                toPay -= v.Amount; // We paid supplier
+                        }
+                    }
+
+                    if (toReceive != 0 || toPay != 0)
+                    {
+                        customerReports.Add(new CustomerReportItem
+                        {
+                            Customer = customer,
+                            ToReceive = toReceive > 0 ? toReceive : 0,
+                            ToPay = toPay > 0 ? toPay : 0,
+                            NetBalance = toReceive - toPay
+                        });
+                    }
+                }
+
+                ViewBag.AsOfDate = date.AddDays(-1);
+                ViewBag.CustomerReports = customerReports.OrderByDescending(c => Math.Abs(c.NetBalance)).ToList();
+                ViewBag.TotalToReceive = customerReports.Sum(c => c.ToReceive);
+                ViewBag.TotalToPay = customerReports.Sum(c => c.ToPay);
+                ViewBag.NetBalance = customerReports.Sum(c => c.NetBalance);
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating customers report");
+                TempData["Error"] = "Error generating customers report.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // GET: Reports/CapitalReport - Complete financial overview
+        public async Task<IActionResult> CapitalReport(DateTime? asOfDate)
+        {
+            try
+            {
+                var date = asOfDate ?? DateTime.Today.AddDays(1);
+
+                // 1. Stock Value - Calculate current stock with average purchase price
+                var items = await _itemRepository.GetActiveItemsAsync();
+                var stockItems = new List<StockValueItem>();
+                decimal totalStockValue = 0;
+
+                foreach (var item in items)
+                {
+                    var purchases = await _context.Vouchers
+                        .Where(v => v.ItemId == item.Id && v.VoucherType == VoucherType.Purchase && v.StockInclude == true && v.VoucherDate < date)
+                        .ToListAsync();
+
+                    var sales = await _context.Vouchers
+                        .Where(v => v.ItemId == item.Id && v.VoucherType == VoucherType.Sale && v.StockInclude == true && v.VoucherDate < date)
+                        .ToListAsync();
+
+                    decimal purchaseQty = purchases.Sum(p => p.Quantity ?? 0);
+                    decimal saleQty = sales.Sum(s => s.Quantity ?? 0);
+                    decimal currentQty = purchaseQty - saleQty;
+
+                    if (currentQty > 0)
+                    {
+                        decimal totalPurchaseAmount = purchases.Sum(p => p.Amount);
+                        decimal avgRate = purchaseQty > 0 ? totalPurchaseAmount / purchaseQty : 0;
+                        decimal stockValue = currentQty * avgRate;
+                        totalStockValue += stockValue;
+
+                        stockItems.Add(new StockValueItem
+                        {
+                            Item = item,
+                            Quantity = currentQty,
+                            AvgRate = avgRate,
+                            Value = stockValue
+                        });
+                    }
+                }
+
+                // 2. Customer Receivables & Payables
+                var customers = await _customerRepository.GetActiveCustomersAsync();
+                decimal totalReceivables = 0;
+                decimal totalPayables = 0;
+                var receivablesList = new List<CustomerReportItem>();
+                var payablesList = new List<CustomerReportItem>();
+
+                foreach (var customer in customers)
+                {
+                    var vouchers = await _context.Vouchers
+                        .Where(v => (v.PurchasingCustomerId == customer.Id || v.ReceivingCustomerId == customer.Id) &&
+                                   v.VoucherDate < date)
+                        .ToListAsync();
+
+                    decimal toReceive = 0;
+                    decimal toPay = 0;
+
+                    foreach (var v in vouchers)
+                    {
+                        if (v.ReceivingCustomerId == customer.Id)
+                        {
+                            if (v.VoucherType == VoucherType.Sale)
+                                toReceive += v.Amount;
+                            else if (v.VoucherType == VoucherType.CashReceived)
+                                toReceive -= v.Amount;
+                        }
+
+                        if (v.PurchasingCustomerId == customer.Id)
+                        {
+                            if (v.VoucherType == VoucherType.Purchase)
+                                toPay += v.Amount;
+                            else if (v.VoucherType == VoucherType.CashPaid)
+                                toPay -= v.Amount;
+                        }
+                    }
+
+                    if (toReceive > 0)
+                    {
+                        totalReceivables += toReceive;
+                        receivablesList.Add(new CustomerReportItem { Customer = customer, ToReceive = toReceive });
+                    }
+                    if (toPay > 0)
+                    {
+                        totalPayables += toPay;
+                        payablesList.Add(new CustomerReportItem { Customer = customer, ToPay = toPay });
+                    }
+                }
+
+                // 3. Cash in Hand
+                decimal cashInHand = await GetCashOpeningBalanceAsync(date, null);
+
+                // 4. Bank Balances
+                var banks = await _bankRepository.GetActiveBanksAsync();
+                var bankBalances = new List<BankBalanceItem>();
+                decimal totalBankBalance = 0;
+
+                foreach (var bank in banks)
+                {
+                    var balance = await GetBankOpeningBalanceAsync(bank.Id, date);
+                    totalBankBalance += balance;
+                    bankBalances.Add(new BankBalanceItem { Bank = bank, Balance = balance });
+                }
+
+                // 5. Expense Head Summary (amounts spent per expense head)
+                var expenseHeads = await _expenseHeadRepository.GetActiveExpenseHeadsAsync();
+                var expenseHeadSummary = new List<ExpenseHeadSummaryItem>();
+                decimal totalExpenseHeadAmount = 0;
+
+                foreach (var eh in expenseHeads)
+                {
+                    var expenseAmount = await _context.Vouchers
+                        .Where(v => v.ExpenseHeadId == eh.Id &&
+                                   (v.VoucherType == VoucherType.Expense || v.VoucherType == VoucherType.Hazri) &&
+                                   v.VoucherDate < date)
+                        .SumAsync(v => (decimal?)v.Amount) ?? 0;
+
+                    if (expenseAmount > 0)
+                    {
+                        totalExpenseHeadAmount += expenseAmount;
+                        expenseHeadSummary.Add(new ExpenseHeadSummaryItem { ExpenseHead = eh, TotalAmount = expenseAmount });
+                    }
+                }
+
+                // Calculate Total Capital
+                decimal totalCapital = totalStockValue + totalReceivables + cashInHand + totalBankBalance - totalPayables;
+
+                ViewBag.AsOfDate = date.AddDays(-1);
+                ViewBag.StockItems = stockItems.OrderByDescending(s => s.Value).ToList();
+                ViewBag.TotalStockValue = totalStockValue;
+                ViewBag.ReceivablesList = receivablesList.OrderByDescending(r => r.ToReceive).ToList();
+                ViewBag.TotalReceivables = totalReceivables;
+                ViewBag.PayablesList = payablesList.OrderByDescending(p => p.ToPay).ToList();
+                ViewBag.TotalPayables = totalPayables;
+                ViewBag.CashInHand = cashInHand;
+                ViewBag.BankBalances = bankBalances.OrderByDescending(b => b.Balance).ToList();
+                ViewBag.TotalBankBalance = totalBankBalance;
+                ViewBag.ExpenseHeadSummary = expenseHeadSummary.OrderByDescending(e => e.TotalAmount).ToList();
+                ViewBag.TotalExpenseHeadAmount = totalExpenseHeadAmount;
+                ViewBag.TotalCapital = totalCapital;
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating capital report");
+                TempData["Error"] = "Error generating capital report.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
     }
 
     // Helper class for stock movement
@@ -1007,5 +1394,46 @@ namespace VoucherManagementSystem.Controllers
         public decimal ClosingStock => OpeningStock + PurchaseQty - SaleQty;
     }
 
+    // Helper class for project report
+    public class ProjectReportItem
+    {
+        public Project Project { get; set; }
+        public decimal Revenue { get; set; }
+        public decimal Purchases { get; set; }
+        public decimal Expenses { get; set; }
+        public decimal ProfitLoss { get; set; }
+        public int VoucherCount { get; set; }
+    }
 
+    // Helper class for customer report
+    public class CustomerReportItem
+    {
+        public Customer Customer { get; set; }
+        public decimal ToReceive { get; set; }
+        public decimal ToPay { get; set; }
+        public decimal NetBalance { get; set; }
+    }
+
+    // Helper class for stock value in capital report
+    public class StockValueItem
+    {
+        public Item Item { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal AvgRate { get; set; }
+        public decimal Value { get; set; }
+    }
+
+    // Helper class for bank balance in capital report
+    public class BankBalanceItem
+    {
+        public Bank Bank { get; set; }
+        public decimal Balance { get; set; }
+    }
+
+    // Helper class for expense head summary
+    public class ExpenseHeadSummaryItem
+    {
+        public ExpenseHead ExpenseHead { get; set; }
+        public decimal TotalAmount { get; set; }
+    }
 }

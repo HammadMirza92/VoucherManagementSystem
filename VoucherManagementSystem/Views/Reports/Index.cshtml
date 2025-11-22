@@ -1,9 +1,57 @@
-﻿@* Views/Reports/Index.cshtml *@
+@* Views/Reports/Index.cshtml *@
 @{
     ViewData["Title"] = "Reports";
 }
 
 <h2><i class="bi bi-graph-up"></i> Reports Center</h2>
+
+<!-- Quick Access Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <a asp-action="CapitalReport" class="text-decoration-none">
+            <div class="card bg-dark text-white h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-bank fs-1"></i>
+                    <h5 class="mt-2">Capital Report</h5>
+                    <small>Complete Financial Overview</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a asp-action="AllCustomersReport" class="text-decoration-none">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-people fs-1"></i>
+                    <h5 class="mt-2">All Customers</h5>
+                    <small>Receivables & Payables</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a asp-action="AllProjectsReport" class="text-decoration-none">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-diagram-3 fs-1"></i>
+                    <h5 class="mt-2">All Projects</h5>
+                    <small>Projects Overview</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a asp-action="AllExpensesReport" class="text-decoration-none">
+            <div class="card bg-danger text-white h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-receipt fs-1"></i>
+                    <h5 class="mt-2">All Expenses</h5>
+                    <small>Expense Summary</small>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
 
 <div class="row">
     <div class="col-md-6">
@@ -118,6 +166,20 @@
 <div class="row">
     <div class="col-md-6">
         <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="bi bi-box-arrow-in-down"></i> Stock Track Report</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Track which customer purchased/sold items and when.</p>
+                <a asp-action="StockTrackReport" class="btn btn-primary w-100">
+                    <i class="bi bi-file-earmark-text"></i> View Stock Track Report
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-3">
             <div class="card-header bg-danger text-white">
                 <h5><i class="bi bi-person-lines-fill"></i> Customer Ledger</h5>
             </div>
@@ -129,11 +191,12 @@
             </div>
         </div>
     </div>
+</div>
 
 <div class="row">
     <div class="col-md-6">
         <div class="card mb-3">
-            <div class="card-header bg-warning text-white">
+            <div class="card-header bg-warning text-dark">
                 <h5><i class="bi bi-download"></i> Export Reports</h5>
             </div>
             <div class="card-body">
