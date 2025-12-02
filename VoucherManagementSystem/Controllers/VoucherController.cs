@@ -158,10 +158,10 @@ namespace VoucherManagementSystem.Controllers
                     voucher.Amount = voucher.Quantity.Value * voucher.Rate.Value;
                 }
 
-                // Handle stock updates for Purchase and Sale
-                if (voucher.ItemId.HasValue && voucher.Quantity.HasValue)
+                // Handle stock updates for Purchase and Sale - ONLY if StockInclude is true
+                if (voucher.ItemId.HasValue && voucher.Quantity.HasValue && voucher.StockInclude)
                 {
-                    if (voucher.VoucherType == VoucherType.Purchase && voucher.StockInclude)
+                    if (voucher.VoucherType == VoucherType.Purchase)
                     {
                         await _itemRepository.UpdateStockAsync(voucher.ItemId.Value, voucher.Quantity.Value, true);
                     }
@@ -243,10 +243,10 @@ namespace VoucherManagementSystem.Controllers
 
                 if (originalVoucher != null)
                 {
-                    // Reverse original stock changes
-                    if (originalVoucher.ItemId.HasValue && originalVoucher.Quantity.HasValue)
+                    // Reverse original stock changes - ONLY if StockInclude was true
+                    if (originalVoucher.ItemId.HasValue && originalVoucher.Quantity.HasValue && originalVoucher.StockInclude)
                     {
-                        if (originalVoucher.VoucherType == VoucherType.Purchase && originalVoucher.StockInclude)
+                        if (originalVoucher.VoucherType == VoucherType.Purchase)
                         {
                             await _itemRepository.UpdateStockAsync(originalVoucher.ItemId.Value, originalVoucher.Quantity.Value, false);
                         }
@@ -273,10 +273,10 @@ namespace VoucherManagementSystem.Controllers
                     voucher.Amount = voucher.Quantity.Value * voucher.Rate.Value;
                 }
 
-                // Apply new stock changes
-                if (voucher.ItemId.HasValue && voucher.Quantity.HasValue)
+                // Apply new stock changes - ONLY if StockInclude is true
+                if (voucher.ItemId.HasValue && voucher.Quantity.HasValue && voucher.StockInclude)
                 {
-                    if (voucher.VoucherType == VoucherType.Purchase && voucher.StockInclude)
+                    if (voucher.VoucherType == VoucherType.Purchase)
                     {
                         await _itemRepository.UpdateStockAsync(voucher.ItemId.Value, voucher.Quantity.Value, true);
                     }
@@ -347,10 +347,10 @@ namespace VoucherManagementSystem.Controllers
             var voucher = await _voucherRepository.GetByIdAsync(id);
             if (voucher != null)
             {
-                // Reverse stock changes
-                if (voucher.ItemId.HasValue && voucher.Quantity.HasValue)
+                // Reverse stock changes - ONLY if StockInclude was true
+                if (voucher.ItemId.HasValue && voucher.Quantity.HasValue && voucher.StockInclude)
                 {
-                    if (voucher.VoucherType == VoucherType.Purchase && voucher.StockInclude)
+                    if (voucher.VoucherType == VoucherType.Purchase)
                     {
                         await _itemRepository.UpdateStockAsync(voucher.ItemId.Value, voucher.Quantity.Value, false);
                     }
