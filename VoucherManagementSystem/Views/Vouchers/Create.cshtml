@@ -165,6 +165,14 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
+            // Initialize Select2 for customer dropdowns with search functionality
+            $('#purchasingCustomer, #receivingCustomer').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Select Customer',
+                allowClear: true,
+                width: '100%'
+            });
+
             // Get transaction number on load
             $.get('/Vouchers/GetTransactionNumber?type=@Model.VoucherType', function(data) {
                 $('#TransactionNumber').val(data.transactionNumber);

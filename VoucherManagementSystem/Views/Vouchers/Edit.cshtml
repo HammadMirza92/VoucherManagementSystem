@@ -211,6 +211,14 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         $(document).ready(function() {
+            // Initialize Select2 for customer dropdowns with search functionality
+            $('#purchasingCustomer, #receivingCustomer').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Select Customer',
+                allowClear: true,
+                width: '100%'
+            });
+
             var voucherType = '@Model.VoucherType';
             configureFormForVoucherType(voucherType);
 
