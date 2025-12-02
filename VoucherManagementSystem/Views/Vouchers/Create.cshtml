@@ -173,6 +173,14 @@
                 width: '100%'
             });
 
+            // Initialize Select2 for item dropdown with search functionality
+            $('#itemSelect').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Select Item',
+                allowClear: true,
+                width: '100%'
+            });
+
             // Get transaction number on load
             $.get('/Vouchers/GetTransactionNumber?type=@Model.VoucherType', function(data) {
                 $('#TransactionNumber').val(data.transactionNumber);

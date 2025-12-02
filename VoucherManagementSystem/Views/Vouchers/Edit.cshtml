@@ -219,6 +219,14 @@
                 width: '100%'
             });
 
+            // Initialize Select2 for item dropdown with search functionality
+            $('#itemSelect').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Select Item',
+                allowClear: true,
+                width: '100%'
+            });
+
             var voucherType = '@Model.VoucherType';
             configureFormForVoucherType(voucherType);
 
