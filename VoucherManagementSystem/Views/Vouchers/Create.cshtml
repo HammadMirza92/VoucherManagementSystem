@@ -139,12 +139,10 @@
                     <input asp-for="GariNo" class="form-control" />
                 </div>
                 <div class="col-md-2 mb-3" id="stockIncludeSection">
-                    <div class="form-check mt-4">
-                        <input asp-for="StockInclude" class="form-check-input" type="checkbox" id="stockInclude" />
-                        <label class="form-check-label" for="stockInclude">
-                            Stock Include
-                        </label>
-                    </div>
+                    <label class="form-label">Stock Include</label>
+                    <input type="text" class="form-control" id="stockIncludeText" value="0" maxlength="1" />
+                    <input asp-for="StockInclude" type="hidden" id="stockInclude" />
+                    <small class="text-muted">0=No, 1=Yes</small>
                 </div>
             </div>
 
@@ -179,6 +177,116 @@
                 placeholder: 'Select Item',
                 allowClear: true,
                 width: '100%'
+            });
+
+            // Arrow key navigation between form fields
+            var formInputs = 'input:not([readonly]):visible, select:visible, textarea:visible';
+
+            $(document).on('keydown', formInputs, function(e) {
+                // Get all visible and enabled form inputs
+                var $allInputs = $(formInputs).not(':disabled');
+                var currentIndex = $allInputs.index(this);
+
+                // Arrow Right - Move to next field
+                if (e.keyCode === 39) {
+                    e.preventDefault();
+                    if (currentIndex < $allInputs.length - 1) {
+                        var $nextInput = $allInputs.eq(currentIndex + 1);
+                        // If next input is a Select2, open it
+                        if ($nextInput.hasClass('select2-hidden-accessible')) {
+                            $nextInput.select2('open');
+                        } else {
+                            $nextInput.focus().select();
+                        }
+                    }
+                }
+
+                // Arrow Left - Move to previous field
+                if (e.keyCode === 37) {
+                    e.preventDefault();
+                    if (currentIndex > 0) {
+                        var $prevInput = $allInputs.eq(currentIndex - 1);
+                        // If previous input is a Select2, open it
+                        if ($prevInput.hasClass('select2-hidden-accessible')) {
+                            $prevInput.select2('open');
+                        } else {
+                            $prevInput.focus().select();
+                        }
+                    }
+                }
+            });
+
+            // Stock Include text to checkbox conversion
+            $('#stockIncludeText').on('input', function() {
+                var value = $(this).val();
+                if (value === '1') {
+                    $('#stockInclude').val('true');
+                    $(this).val('1');
+                } else {
+                    $('#stockInclude').val('false');
+                    $(this).val('0');
+                }
+            });
+
+            // On form submit, ensure stockInclude hidden field is set correctly
+            $('#voucherForm').on('submit', function() {
+                var value = $('#stockIncludeText').val();
+                $('#stockInclude').val(value === '1' ? 'true' : 'false');
+            });
+
+            // Arrow key navigation for Select2 search boxes
+            $(document).on('keydown', '.select2-search__field', function(e) {
+                // Arrow Right - Close dropdown and move to next field
+                if (e.keyCode === 39) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Find which Select2 this search belongs to
+                    var $container = $(this).closest('.select2-container');
+                    var $select = $($container.prev('select.select2-hidden-accessible'));
+
+                    // Close the dropdown
+                    $select.select2('close');
+
+                    // Find next field
+                    var $allInputs = $(formInputs).not(':disabled');
+                    var currentIndex = $allInputs.index($select[0]);
+
+                    if (currentIndex < $allInputs.length - 1) {
+                        var $nextInput = $allInputs.eq(currentIndex + 1);
+                        if ($nextInput.hasClass('select2-hidden-accessible')) {
+                            $nextInput.select2('open');
+                        } else {
+                            $nextInput.focus().select();
+                        }
+                    }
+                }
+
+                // Arrow Left - Close dropdown and move to previous field
+                if (e.keyCode === 37) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Find which Select2 this search belongs to
+                    var $container = $(this).closest('.select2-container');
+                    var $select = $($container.prev('select.select2-hidden-accessible'));
+
+                    // Close the dropdown
+                    $select.select2('close');
+
+                    // Find previous field
+                    var $allInputs = $(formInputs).not(':disabled');
+                    var currentIndex = $allInputs.index($select[0]);
+
+                    if (currentIndex > 0) {
+                        var $prevInput = $allInputs.eq(currentIndex - 1);
+                        if ($prevInput.hasClass('select2-hidden-accessible')) {
+                            $prevInput.select2('open');
+                        } else {
+                            $prevInput.focus().select();
+                        }
+                    }
+                }
             });
 
             // Get transaction number on load
