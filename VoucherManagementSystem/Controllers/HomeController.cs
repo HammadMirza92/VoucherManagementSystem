@@ -70,21 +70,18 @@ namespace VoucherManagementSystem.Controllers
 
             foreach (var item in items)
             {
-                var stockPurchases = await _context.Vouchers
-                    .Where(v => v.ItemId == item.Id && v.VoucherType == VoucherType.Purchase && v.StockInclude == true && v.VoucherDate < date)
-                    .ToListAsync();
-                var stockSales = await _context.Vouchers
-                    .Where(v => v.ItemId == item.Id && v.VoucherType == VoucherType.Sale && v.StockInclude == true && v.VoucherDate < date)
-                    .ToListAsync();
-
-                decimal purchaseQty = stockPurchases.Sum(p => p.Quantity ?? 0);
-                decimal saleQty = stockSales.Sum(s => s.Quantity ?? 0);
-                decimal currentQty = item.CurrentStock + purchaseQty - saleQty;
+                decimal currentQty = item.CurrentStock;
 
                 if (currentQty > 0)
                 {
+                    // Get all purchases for this item to calculate average rate
+                    var stockPurchases = await _context.Vouchers
+                        .Where(v => v.ItemId == item.Id && v.VoucherType == VoucherType.Purchase && v.StockInclude == true)
+                        .ToListAsync();
+
                     decimal totalPurchaseAmount = stockPurchases.Sum(p => p.Amount);
-                    decimal avgRate = purchaseQty > 0 ? totalPurchaseAmount / purchaseQty : item.DefaultRate;
+                    decimal totalPurchaseQty = stockPurchases.Sum(p => p.Quantity ?? 0);
+                    decimal avgRate = totalPurchaseQty > 0 ? totalPurchaseAmount / totalPurchaseQty : item.DefaultRate;
                     decimal stockValue = currentQty * avgRate;
                     totalStockValue += stockValue;
                     stockData.Add(new DashboardStockItem { Name = item.Name, Quantity = currentQty, Value = stockValue });
