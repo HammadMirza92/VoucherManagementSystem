@@ -113,14 +113,22 @@ namespace VoucherManagementSystem.Controllers
 
                 var vouchers = await query.OrderBy(v => v.VoucherDate).ToListAsync();
 
-                // Calculate revenue and expenses based on filtered vouchers
-                var revenue = vouchers.Where(v => v.VoucherType == VoucherType.Sale || v.VoucherType == VoucherType.CashReceived).Sum(v => v.Amount);
-                var expenses = vouchers.Where(v => v.VoucherType == VoucherType.Purchase || v.VoucherType == VoucherType.Expense ||
-                                                    v.VoucherType == VoucherType.CashPaid || v.VoucherType == VoucherType.Hazri).Sum(v => v.Amount);
-                var profitLoss = revenue - expenses;
-
                 // Get item-wise purchase and sale summary with filters
                 var itemSummary = await GetProjectItemSummaryAsync(projectId, startDate, endDate, voucherType, itemId, customerId);
+
+                // Calculate separate values
+                var totalSale = vouchers.Where(v => v.VoucherType == VoucherType.Sale || v.VoucherType == VoucherType.CashReceived).Sum(v => v.Amount);
+                var totalStock = itemSummary.Sum(i => i.StockValue); // Total stock value from items
+                var totalRevenue = totalSale + totalStock; // Revenue = Sale + Stock
+
+                // Separate Purchase and Expense
+                var totalPurchase = vouchers.Where(v => v.VoucherType == VoucherType.Purchase).Sum(v => v.Amount);
+                var totalExpense = vouchers.Where(v => v.VoucherType == VoucherType.Expense ||
+                                                       v.VoucherType == VoucherType.CashPaid ||
+                                                       v.VoucherType == VoucherType.Hazri).Sum(v => v.Amount);
+                var totalExpenses = totalPurchase + totalExpense; // Total Expenses = Purchase + Expense
+
+                var profitLoss = totalRevenue - totalExpenses; // Net Profit/Loss = Total Revenue - Total Expenses
 
                 // Populate dropdowns for filters
                 ViewBag.Items = new SelectList(await _itemRepository.GetActiveItemsAsync(), "Id", "Name", itemId);
@@ -129,8 +137,12 @@ namespace VoucherManagementSystem.Controllers
                 ViewBag.Project = project;
                 ViewBag.FromDate = startDate;
                 ViewBag.ToDate = endDate;
-                ViewBag.Revenue = revenue;
-                ViewBag.Expenses = expenses;
+                ViewBag.TotalSale = totalSale;
+                ViewBag.TotalStock = totalStock;
+                ViewBag.Revenue = totalRevenue; // Total Revenue (Sale + Stock)
+                ViewBag.TotalPurchase = totalPurchase;
+                ViewBag.TotalExpense = totalExpense;
+                ViewBag.Expenses = totalExpenses; // Total Expenses (Purchase + Expense)
                 ViewBag.ProfitLoss = profitLoss;
                 ViewBag.Vouchers = vouchers;
                 ViewBag.ItemSummary = itemSummary;

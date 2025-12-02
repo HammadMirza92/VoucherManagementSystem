@@ -4,7 +4,11 @@
     ViewData["Title"] = "Profit & Loss Report";
     var project = ViewBag.Project as VoucherManagementSystem.Models.Project;
     var vouchers = ViewBag.Vouchers as IEnumerable<VoucherManagementSystem.Models.Voucher>;
+    var totalSale = ViewBag.TotalSale != null ? (decimal)ViewBag.TotalSale : 0;
+    var totalStock = ViewBag.TotalStock != null ? (decimal)ViewBag.TotalStock : 0;
     var revenue = ViewBag.Revenue != null ? (decimal)ViewBag.Revenue : 0;
+    var totalPurchase = ViewBag.TotalPurchase != null ? (decimal)ViewBag.TotalPurchase : 0;
+    var totalExpense = ViewBag.TotalExpense != null ? (decimal)ViewBag.TotalExpense : 0;
     var expenses = ViewBag.Expenses != null ? (decimal)ViewBag.Expenses : 0;
     var profitLoss = ViewBag.ProfitLoss != null ? (decimal)ViewBag.ProfitLoss : 0;
     var fromDate = ViewBag.FromDate != null ? (DateTime)ViewBag.FromDate : DateTime.Today.AddMonths(-1);
@@ -187,35 +191,85 @@
         <small>Period: @fromDate.ToString("dd-MMM-yyyy") to @toDate.ToString("dd-MMM-yyyy")</small>
     </div>
     <div class="card-body">
-        <div class="row text-center">
-            <div class="col-md-4">
-                <div class="card bg-success text-white">
-                    <div class="card-body">
-                        <h6 class="card-title">
-                            <i class="bi bi-arrow-up-circle"></i> Total Revenue
-                        </h6>
-                        <h3 class="mb-0">Rs. @string.Format("{0:N0}", revenue)</h3>
+        <!-- Row 1: Total Sale + Total Stock = Total Revenue -->
+        <div class="row g-2 text-center mb-2">
+            <div class="col-3">
+                <div class="card bg-success text-white h-100">
+                    <div class="card-body p-2">
+                        <small class="d-block"><i class="bi bi-cart-check"></i> Total Sale</small>
+                        <h5 class="mb-0">@string.Format("{0:N0}", totalSale)</h5>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card bg-danger text-white">
-                    <div class="card-body">
-                        <h6 class="card-title">
-                            <i class="bi bi-arrow-down-circle"></i> Total Expenses
-                        </h6>
-                        <h3 class="mb-0">Rs. @string.Format("{0:N0}", expenses)</h3>
+            <div class="col-1 d-flex align-items-center justify-content-center p-0">
+                <i class="bi bi-plus-circle text-success fs-3"></i>
+            </div>
+            <div class="col-3">
+                <div class="card bg-primary text-white h-100">
+                    <div class="card-body p-2">
+                        <small class="d-block"><i class="bi bi-box-seam"></i> Total Stock</small>
+                        <h5 class="mb-0">@string.Format("{0:N0}", totalStock)</h5>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card bg-@(profitLoss >= 0 ? "info" : "warning") text-white">
-                    <div class="card-body">
-                        <h6 class="card-title">
+            <div class="col-1 d-flex align-items-center justify-content-center p-0">
+                <i class="bi bi-arrow-right-circle text-info fs-3"></i>
+            </div>
+            <div class="col-4">
+                <div class="card bg-info text-white h-100">
+                    <div class="card-body p-2">
+                        <small class="d-block"><i class="bi bi-cash-stack"></i> Total Revenue</small>
+                        <h4 class="mb-0 fw-bold">@string.Format("{0:N0}", revenue)</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Total Purchase + Total Expense = Total Expenses -->
+        <div class="row g-2 text-center mb-2">
+            <div class="col-3">
+                <div class="card bg-warning text-dark h-100">
+                    <div class="card-body p-2">
+                        <small class="d-block"><i class="bi bi-cart-plus"></i> Total Purchase</small>
+                        <h5 class="mb-0">@string.Format("{0:N0}", totalPurchase)</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-1 d-flex align-items-center justify-content-center p-0">
+                <i class="bi bi-plus-circle text-danger fs-3"></i>
+            </div>
+            <div class="col-3">
+                <div class="card bg-secondary text-white h-100">
+                    <div class="card-body p-2">
+                        <small class="d-block"><i class="bi bi-receipt"></i> Total Expense</small>
+                        <h5 class="mb-0">@string.Format("{0:N0}", totalExpense)</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-1 d-flex align-items-center justify-content-center p-0">
+                <i class="bi bi-arrow-right-circle text-danger fs-3"></i>
+            </div>
+            <div class="col-4">
+                <div class="card bg-danger text-white h-100">
+                    <div class="card-body p-2">
+                        <small class="d-block"><i class="bi bi-arrow-down-circle"></i> Total Expenses</small>
+                        <h4 class="mb-0 fw-bold">@string.Format("{0:N0}", expenses)</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 3: Net Profit/Loss -->
+        <div class="row g-2 text-center">
+            <div class="col-12">
+                <div class="card bg-@(profitLoss >= 0 ? "success" : "dark") text-white">
+                    <div class="card-body py-2">
+                        <h6 class="mb-1">
                             <i class="bi bi-@(profitLoss >= 0 ? "graph-up" : "graph-down")"></i>
                             Net @(profitLoss >= 0 ? "Profit" : "Loss")
                         </h6>
-                        <h3 class="mb-0">Rs. @string.Format("{0:N0}", Math.Abs(profitLoss))</h3>
+                        <h2 class="mb-0 fw-bold">Rs. @string.Format("{0:N0}", Math.Abs(profitLoss))</h2>
+                        <small>(Revenue: @string.Format("{0:N0}", revenue) - Expenses: @string.Format("{0:N0}", expenses))</small>
                     </div>
                 </div>
             </div>
