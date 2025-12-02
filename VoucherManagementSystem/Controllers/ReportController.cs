@@ -87,6 +87,9 @@ namespace VoucherManagementSystem.Controllers
                 var vouchers = await _voucherRepository.GetVouchersByProjectAsync(projectId);
                 vouchers = vouchers.Where(v => v.VoucherDate >= startDate && v.VoucherDate <= endDate);
 
+                // Get item-wise purchase and sale summary
+                var itemSummary = await GetProjectItemSummaryAsync(projectId, startDate, endDate);
+
                 ViewBag.Project = project;
                 ViewBag.FromDate = startDate;
                 ViewBag.ToDate = endDate;
@@ -94,6 +97,7 @@ namespace VoucherManagementSystem.Controllers
                 ViewBag.Expenses = expenses;
                 ViewBag.ProfitLoss = profitLoss;
                 ViewBag.Vouchers = vouchers;
+                ViewBag.ItemSummary = itemSummary;
 
                 return View("ProfitLoss");
             }
@@ -126,6 +130,9 @@ namespace VoucherManagementSystem.Controllers
                 var vouchers = await _voucherRepository.GetVouchersByProjectAsync(projectId);
                 vouchers = vouchers.Where(v => v.VoucherDate >= fromDate && v.VoucherDate <= toDate);
 
+                // Get item-wise purchase and sale summary
+                var itemSummary = await GetProjectItemSummaryAsync(projectId, fromDate, toDate);
+
                 ViewBag.Project = project;
                 ViewBag.FromDate = fromDate;
                 ViewBag.ToDate = toDate;
@@ -133,6 +140,7 @@ namespace VoucherManagementSystem.Controllers
                 ViewBag.Expenses = expenses;
                 ViewBag.ProfitLoss = profitLoss;
                 ViewBag.Vouchers = vouchers;
+                ViewBag.ItemSummary = itemSummary;
 
                 return View();
             }
@@ -1034,6 +1042,44 @@ namespace VoucherManagementSystem.Controllers
             return balance;
         }
 
+        // Helper method to get item-wise purchase and sale summary for a project
+        private async Task<List<ProjectItemSummary>> GetProjectItemSummaryAsync(int projectId, DateTime fromDate, DateTime toDate)
+        {
+            var vouchers = await _context.Vouchers
+                .Include(v => v.Item)
+                .Where(v => v.ProjectId == projectId &&
+                           v.ItemId != null &&
+                           v.VoucherDate >= fromDate &&
+                           v.VoucherDate <= toDate &&
+                           (v.VoucherType == VoucherType.Purchase || v.VoucherType == VoucherType.Sale))
+                .ToListAsync();
+
+            var itemGroups = vouchers.GroupBy(v => v.ItemId.Value);
+            var summary = new List<ProjectItemSummary>();
+
+            foreach (var group in itemGroups)
+            {
+                var item = group.First().Item;
+                var purchases = group.Where(v => v.VoucherType == VoucherType.Purchase).ToList();
+                var sales = group.Where(v => v.VoucherType == VoucherType.Sale).ToList();
+
+                var purchaseQty = purchases.Sum(p => p.Quantity ?? 0);
+                var saleQty = sales.Sum(s => s.Quantity ?? 0);
+                var stockQty = purchaseQty - saleQty;
+
+                summary.Add(new ProjectItemSummary
+                {
+                    ItemName = item?.Name ?? "Unknown",
+                    PurchaseQty = purchaseQty,
+                    SaleQty = saleQty,
+                    StockQty = stockQty,
+                    Unit = item?.Unit ?? ""
+                });
+            }
+
+            return summary.OrderBy(s => s.ItemName).ToList();
+        }
+
         // Helper method to get opening bank balance
         private async Task<decimal> GetBankOpeningBalanceAsync(int bankId, DateTime date)
         {
@@ -1498,5 +1544,15 @@ namespace VoucherManagementSystem.Controllers
     {
         public ExpenseHead ExpenseHead { get; set; }
         public decimal TotalAmount { get; set; }
+    }
+
+    // Helper class for project item summary
+    public class ProjectItemSummary
+    {
+        public string ItemName { get; set; }
+        public decimal PurchaseQty { get; set; }
+        public decimal SaleQty { get; set; }
+        public decimal StockQty { get; set; }
+        public string Unit { get; set; }
     }
 }
