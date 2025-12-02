@@ -1,4 +1,5 @@
 ﻿@* Views/Reports/ProfitLoss.cshtml *@
+@using Microsoft.AspNetCore.Mvc.Rendering
 @{
     ViewData["Title"] = "Profit & Loss Report";
     var project = ViewBag.Project as VoucherManagementSystem.Models.Project;
@@ -8,11 +9,162 @@
     var profitLoss = ViewBag.ProfitLoss != null ? (decimal)ViewBag.ProfitLoss : 0;
     var fromDate = ViewBag.FromDate != null ? (DateTime)ViewBag.FromDate : DateTime.Today.AddMonths(-1);
     var toDate = ViewBag.ToDate != null ? (DateTime)ViewBag.ToDate : DateTime.Today;
+    var selectedVoucherType = ViewBag.SelectedVoucherType as string;
+    var selectedItemId = ViewBag.SelectedItemId as int?;
+    var selectedCustomerId = ViewBag.SelectedCustomerId as int?;
+    var items = ViewBag.Items as SelectList;
+    var customers = ViewBag.Customers as SelectList;
 }
 
 <div class="d-print-none">
     <h2><i class="bi bi-bar-chart"></i> Profit & Loss Report</h2>
+
+    <!-- Filter Section -->
+    <div class="card mb-3">
+        <div class="card-header bg-light">
+            <h6 class="mb-0"><i class="bi bi-funnel"></i> Filter Options</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" asp-action="ProjectReport" class="row g-3">
+                <input type="hidden" name="projectId" value="@(project?.Id)" />
+
+                <div class="col-md-2">
+                    <label class="form-label"><i class="bi bi-calendar"></i> From Date</label>
+                    <input type="date" name="fromDate" class="form-control" value="@fromDate.ToString("yyyy-MM-dd")" />
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label"><i class="bi bi-calendar"></i> To Date</label>
+                    <input type="date" name="toDate" class="form-control" value="@toDate.ToString("yyyy-MM-dd")" />
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label"><i class="bi bi-tag"></i> Voucher Type</label>
+                    <select name="voucherType" class="form-select">
+                        <option value="">-- All Types --</option>
+                        @if (selectedVoucherType == "Purchase")
+                        {
+                            <option value="Purchase" selected>Purchase</option>
+                        }
+                        else
+                        {
+                            <option value="Purchase">Purchase</option>
+                        }
+                        @if (selectedVoucherType == "Sale")
+                        {
+                            <option value="Sale" selected>Sale</option>
+                        }
+                        else
+                        {
+                            <option value="Sale">Sale</option>
+                        }
+                        @if (selectedVoucherType == "Expense")
+                        {
+                            <option value="Expense" selected>Expense</option>
+                        }
+                        else
+                        {
+                            <option value="Expense">Expense</option>
+                        }
+                        @if (selectedVoucherType == "Hazri")
+                        {
+                            <option value="Hazri" selected>Hazri</option>
+                        }
+                        else
+                        {
+                            <option value="Hazri">Hazri</option>
+                        }
+                        @if (selectedVoucherType == "CashReceived")
+                        {
+                            <option value="CashReceived" selected>Cash Received</option>
+                        }
+                        else
+                        {
+                            <option value="CashReceived">Cash Received</option>
+                        }
+                        @if (selectedVoucherType == "CashPaid")
+                        {
+                            <option value="CashPaid" selected>Cash Paid</option>
+                        }
+                        else
+                        {
+                            <option value="CashPaid">Cash Paid</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label"><i class="bi bi-box-seam"></i> Item</label>
+                    <select name="itemId" class="form-select">
+                        <option value="">-- All Items --</option>
+                        @if (items != null)
+                        {
+                            @foreach (var item in items)
+                            {
+                                @if (selectedItemId?.ToString() == item.Value)
+                                {
+                                    <option value="@item.Value" selected>@item.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label"><i class="bi bi-person"></i> Customer</label>
+                    <select name="customerId" class="form-select">
+                        <option value="">-- All Customers --</option>
+                        @if (customers != null)
+                        {
+                            @foreach (var customer in customers)
+                            {
+                                @if (selectedCustomerId?.ToString() == customer.Value)
+                                {
+                                    <option value="@customer.Value" selected>@customer.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@customer.Value">@customer.Text</option>
+                                }
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
+
+@if (!string.IsNullOrEmpty(selectedVoucherType) || selectedItemId.HasValue || selectedCustomerId.HasValue)
+{
+    <div class="alert alert-info d-print-none">
+        <strong><i class="bi bi-funnel"></i> Active Filters:</strong>
+        @if (!string.IsNullOrEmpty(selectedVoucherType))
+        {
+            <span class="badge bg-primary ms-2">Type: @selectedVoucherType</span>
+        }
+        @if (selectedItemId.HasValue && items != null)
+        {
+            var itemName = items.FirstOrDefault(i => i.Value == selectedItemId.ToString())?.Text ?? "Unknown";
+            <span class="badge bg-success ms-2">Item: @itemName</span>
+        }
+        @if (selectedCustomerId.HasValue && customers != null)
+        {
+            var customerName = customers.FirstOrDefault(c => c.Value == selectedCustomerId.ToString())?.Text ?? "Unknown";
+            <span class="badge bg-warning text-dark ms-2">Customer: @customerName</span>
+        }
+    </div>
+}
 
 <div class="card mb-3">
     <div class="card-header bg-primary text-white">

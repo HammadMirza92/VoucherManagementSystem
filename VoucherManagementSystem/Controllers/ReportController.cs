@@ -66,7 +66,7 @@ namespace VoucherManagementSystem.Controllers
         }
 
         // GET: Reports/ProjectReport - Project details report
-        public async Task<IActionResult> ProjectReport(int projectId, DateTime? fromDate, DateTime? toDate)
+        public async Task<IActionResult> ProjectReport(int projectId, DateTime? fromDate, DateTime? toDate, string? voucherType, int? itemId, int? customerId)
         {
             try
             {
@@ -80,15 +80,51 @@ namespace VoucherManagementSystem.Controllers
                 var startDate = fromDate ?? new DateTime(DateTime.Today.Year, 1, 1);
                 var endDate = toDate ?? DateTime.Today;
 
-                var revenue = await _projectRepository.GetProjectRevenueAsync(projectId, startDate, endDate);
-                var expenses = await _projectRepository.GetProjectExpenseAsync(projectId, startDate, endDate);
+                // Get base vouchers with all related data
+                var query = _context.Vouchers
+                    .Include(v => v.PurchasingCustomer)
+                    .Include(v => v.ReceivingCustomer)
+                    .Include(v => v.Item)
+                    .Include(v => v.ExpenseHead)
+                    .Include(v => v.Project)
+                    .Where(v => v.ProjectId == projectId &&
+                               v.VoucherDate >= startDate &&
+                               v.VoucherDate <= endDate)
+                    .AsQueryable();
+
+                // Apply voucher type filter if selected
+                if (!string.IsNullOrEmpty(voucherType) && Enum.TryParse<VoucherType>(voucherType, out var vType))
+                {
+                    query = query.Where(v => v.VoucherType == vType);
+                }
+
+                // Apply item filter if selected
+                if (itemId.HasValue && itemId.Value > 0)
+                {
+                    query = query.Where(v => v.ItemId == itemId.Value);
+                }
+
+                // Apply customer filter if selected (check both purchasing and receiving customer)
+                if (customerId.HasValue && customerId.Value > 0)
+                {
+                    query = query.Where(v => v.PurchasingCustomerId == customerId.Value ||
+                                            v.ReceivingCustomerId == customerId.Value);
+                }
+
+                var vouchers = await query.OrderBy(v => v.VoucherDate).ToListAsync();
+
+                // Calculate revenue and expenses based on filtered vouchers
+                var revenue = vouchers.Where(v => v.VoucherType == VoucherType.Sale || v.VoucherType == VoucherType.CashReceived).Sum(v => v.Amount);
+                var expenses = vouchers.Where(v => v.VoucherType == VoucherType.Purchase || v.VoucherType == VoucherType.Expense ||
+                                                    v.VoucherType == VoucherType.CashPaid || v.VoucherType == VoucherType.Hazri).Sum(v => v.Amount);
                 var profitLoss = revenue - expenses;
 
-                var vouchers = await _voucherRepository.GetVouchersByProjectAsync(projectId);
-                vouchers = vouchers.Where(v => v.VoucherDate >= startDate && v.VoucherDate <= endDate);
+                // Get item-wise purchase and sale summary with filters
+                var itemSummary = await GetProjectItemSummaryAsync(projectId, startDate, endDate, voucherType, itemId, customerId);
 
-                // Get item-wise purchase and sale summary
-                var itemSummary = await GetProjectItemSummaryAsync(projectId, startDate, endDate);
+                // Populate dropdowns for filters
+                ViewBag.Items = new SelectList(await _itemRepository.GetActiveItemsAsync(), "Id", "Name", itemId);
+                ViewBag.Customers = new SelectList(await _customerRepository.GetActiveCustomersAsync(), "Id", "Name", customerId);
 
                 ViewBag.Project = project;
                 ViewBag.FromDate = startDate;
@@ -98,6 +134,9 @@ namespace VoucherManagementSystem.Controllers
                 ViewBag.ProfitLoss = profitLoss;
                 ViewBag.Vouchers = vouchers;
                 ViewBag.ItemSummary = itemSummary;
+                ViewBag.SelectedVoucherType = voucherType;
+                ViewBag.SelectedItemId = itemId;
+                ViewBag.SelectedCustomerId = customerId;
 
                 return View("ProfitLoss");
             }
@@ -112,7 +151,7 @@ namespace VoucherManagementSystem.Controllers
         // POST: Reports/ProfitLoss
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ProfitLoss(int projectId, DateTime fromDate, DateTime toDate)
+        public async Task<IActionResult> ProfitLoss(int projectId, DateTime fromDate, DateTime toDate, string? voucherType, int? itemId, int? customerId)
         {
             try
             {
@@ -123,26 +162,16 @@ namespace VoucherManagementSystem.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                var revenue = await _projectRepository.GetProjectRevenueAsync(projectId, fromDate, toDate);
-                var expenses = await _projectRepository.GetProjectExpenseAsync(projectId, fromDate, toDate);
-                var profitLoss = revenue - expenses;
-
-                var vouchers = await _voucherRepository.GetVouchersByProjectAsync(projectId);
-                vouchers = vouchers.Where(v => v.VoucherDate >= fromDate && v.VoucherDate <= toDate);
-
-                // Get item-wise purchase and sale summary
-                var itemSummary = await GetProjectItemSummaryAsync(projectId, fromDate, toDate);
-
-                ViewBag.Project = project;
-                ViewBag.FromDate = fromDate;
-                ViewBag.ToDate = toDate;
-                ViewBag.Revenue = revenue;
-                ViewBag.Expenses = expenses;
-                ViewBag.ProfitLoss = profitLoss;
-                ViewBag.Vouchers = vouchers;
-                ViewBag.ItemSummary = itemSummary;
-
-                return View();
+                // Redirect to GET with query parameters to enable filtering
+                return RedirectToAction(nameof(ProjectReport), new
+                {
+                    projectId = projectId,
+                    fromDate = fromDate,
+                    toDate = toDate,
+                    voucherType = voucherType,
+                    itemId = itemId,
+                    customerId = customerId
+                });
             }
             catch (Exception ex)
             {
@@ -1043,16 +1072,36 @@ namespace VoucherManagementSystem.Controllers
         }
 
         // Helper method to get item-wise purchase and sale summary for a project
-        private async Task<List<ProjectItemSummary>> GetProjectItemSummaryAsync(int projectId, DateTime fromDate, DateTime toDate)
+        private async Task<List<ProjectItemSummary>> GetProjectItemSummaryAsync(int projectId, DateTime fromDate, DateTime toDate, string? voucherType = null, int? itemId = null, int? customerId = null)
         {
-            var vouchers = await _context.Vouchers
+            var query = _context.Vouchers
                 .Include(v => v.Item)
                 .Where(v => v.ProjectId == projectId &&
                            v.ItemId != null &&
                            v.VoucherDate >= fromDate &&
                            v.VoucherDate <= toDate &&
-                           (v.VoucherType == VoucherType.Purchase || v.VoucherType == VoucherType.Sale))
-                .ToListAsync();
+                           (v.VoucherType == VoucherType.Purchase || v.VoucherType == VoucherType.Sale));
+
+            // Apply voucher type filter if specified
+            if (!string.IsNullOrEmpty(voucherType) && Enum.TryParse<VoucherType>(voucherType, out var vType))
+            {
+                query = query.Where(v => v.VoucherType == vType);
+            }
+
+            // Apply item filter if specified
+            if (itemId.HasValue && itemId.Value > 0)
+            {
+                query = query.Where(v => v.ItemId == itemId.Value);
+            }
+
+            // Apply customer filter if specified (check both purchasing and receiving customer)
+            if (customerId.HasValue && customerId.Value > 0)
+            {
+                query = query.Where(v => v.PurchasingCustomerId == customerId.Value ||
+                                        v.ReceivingCustomerId == customerId.Value);
+            }
+
+            var vouchers = await query.ToListAsync();
 
             var itemGroups = vouchers.GroupBy(v => v.ItemId.Value);
             var summary = new List<ProjectItemSummary>();
