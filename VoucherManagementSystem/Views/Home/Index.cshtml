@@ -179,8 +179,9 @@
     <!-- Receivables -->
     <div class="col-md-3">
         <div class="card h-100">
-            <div class="card-header py-1 bg-success text-white">
+            <div class="card-header py-1 bg-success text-white d-flex justify-content-between align-items-center">
                 <small><i class="bi bi-arrow-down-circle"></i> Receivables</small>
+                <small class="fw-bold">@string.Format("{0:N0}", totalReceivables)</small>
             </div>
             <div class="card-body p-0" style="max-height: 200px; overflow-y: auto;">
                 <table class="table table-sm mb-0" style="font-size: 0.8rem;">
@@ -204,8 +205,9 @@
     <!-- Payables -->
     <div class="col-md-3">
         <div class="card h-100">
-            <div class="card-header py-1 bg-danger text-white">
+            <div class="card-header py-1 bg-danger text-white d-flex justify-content-between align-items-center">
                 <small><i class="bi bi-arrow-up-circle"></i> Payables</small>
+                <small class="fw-bold">@string.Format("{0:N0}", totalPayables)</small>
             </div>
             <div class="card-body p-0" style="max-height: 200px; overflow-y: auto;">
                 <table class="table table-sm mb-0" style="font-size: 0.8rem;">
@@ -229,8 +231,9 @@
     <!-- Stock -->
     <div class="col-md-3">
         <div class="card h-100">
-            <div class="card-header py-1 bg-primary text-white">
+            <div class="card-header py-1 bg-primary text-white d-flex justify-content-between align-items-center">
                 <small><i class="bi bi-box-seam"></i> Stock Items</small>
+                <small class="fw-bold">@string.Format("{0:N0}", totalStockValue)</small>
             </div>
             <div class="card-body p-0" style="max-height: 200px; overflow-y: auto;">
                 <table class="table table-sm mb-0" style="font-size: 0.8rem;">
