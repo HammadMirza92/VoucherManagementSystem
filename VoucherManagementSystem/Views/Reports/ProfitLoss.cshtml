@@ -141,6 +141,19 @@
                     </button>
                 </div>
             </form>
+
+            @if (!string.IsNullOrEmpty(selectedVoucherType) || selectedItemId.HasValue || selectedCustomerId.HasValue)
+            {
+                <div class="mt-2 text-end">
+                    <a asp-action="ProjectReport"
+                       asp-route-projectId="@(project?.Id)"
+                       asp-route-fromDate="@fromDate.ToString("yyyy-MM-dd")"
+                       asp-route-toDate="@toDate.ToString("yyyy-MM-dd")"
+                       class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-x-circle"></i> Clear Filters
+                    </a>
+                </div>
+            }
         </div>
     </div>
 </div>
