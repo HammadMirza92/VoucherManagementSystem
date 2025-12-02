@@ -1067,12 +1067,23 @@ namespace VoucherManagementSystem.Controllers
                 var saleQty = sales.Sum(s => s.Quantity ?? 0);
                 var stockQty = purchaseQty - saleQty;
 
+                var purchaseAmount = purchases.Sum(p => p.Amount);
+                var saleAmount = sales.Sum(s => s.Amount);
+
+                // Calculate average purchase rate
+                var avgPurchaseRate = purchaseQty > 0 ? purchaseAmount / purchaseQty : 0;
+                var stockValue = stockQty * avgPurchaseRate;
+
                 summary.Add(new ProjectItemSummary
                 {
                     ItemName = item?.Name ?? "Unknown",
                     PurchaseQty = purchaseQty,
                     SaleQty = saleQty,
                     StockQty = stockQty,
+                    PurchaseAmount = purchaseAmount,
+                    SaleAmount = saleAmount,
+                    AvgPurchaseRate = avgPurchaseRate,
+                    StockValue = stockValue,
                     Unit = item?.Unit ?? ""
                 });
             }
@@ -1553,6 +1564,10 @@ namespace VoucherManagementSystem.Controllers
         public decimal PurchaseQty { get; set; }
         public decimal SaleQty { get; set; }
         public decimal StockQty { get; set; }
+        public decimal PurchaseAmount { get; set; }
+        public decimal SaleAmount { get; set; }
+        public decimal AvgPurchaseRate { get; set; }
+        public decimal StockValue { get; set; }
         public string Unit { get; set; }
     }
 }

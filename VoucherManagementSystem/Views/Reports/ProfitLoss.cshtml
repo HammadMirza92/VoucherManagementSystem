@@ -93,9 +93,12 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th>Item Name</th>
-                                        <th class="text-center">Total Purchased</th>
-                                        <th class="text-center">Total Sold</th>
-                                        <th class="text-center">Stock Balance</th>
+                                        <th class="text-center">Total Purchased (Qty)</th>
+                                        <th class="text-end">Total Purchase Amount</th>
+                                        <th class="text-center">Total Sold (Qty)</th>
+                                        <th class="text-end">Total Sale Amount</th>
+                                        <th class="text-center">Stock Balance (Qty)</th>
+                                        <th class="text-end">Stock Balance (Value)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -104,13 +107,29 @@
                                         <tr>
                                             <td>@item.ItemName</td>
                                             <td class="text-center">@item.PurchaseQty.ToString("N2") @item.Unit</td>
+                                            <td class="text-end">Rs. @string.Format("{0:N0}", item.PurchaseAmount)</td>
                                             <td class="text-center">@item.SaleQty.ToString("N2") @item.Unit</td>
+                                            <td class="text-end">Rs. @string.Format("{0:N0}", item.SaleAmount)</td>
                                             <td class="text-center fw-bold @(item.StockQty > 0 ? "text-success" : item.StockQty < 0 ? "text-danger" : "")">
                                                 @item.StockQty.ToString("N2") @item.Unit
+                                            </td>
+                                            <td class="text-end fw-bold @(item.StockValue > 0 ? "text-success" : item.StockValue < 0 ? "text-danger" : "")">
+                                                Rs. @string.Format("{0:N0}", item.StockValue)
                                             </td>
                                         </tr>
                                     }
                                 </tbody>
+                                <tfoot class="table-secondary">
+                                    <tr>
+                                        <th>Total</th>
+                                        <th class="text-center">-</th>
+                                        <th class="text-end">Rs. @string.Format("{0:N0}", itemSummary.Sum(i => i.PurchaseAmount))</th>
+                                        <th class="text-center">-</th>
+                                        <th class="text-end">Rs. @string.Format("{0:N0}", itemSummary.Sum(i => i.SaleAmount))</th>
+                                        <th class="text-center">-</th>
+                                        <th class="text-end">Rs. @string.Format("{0:N0}", itemSummary.Sum(i => i.StockValue))</th>
+                                    </tr>
+                                </tfoot>
                             </table>
                         </div>
                     </div>
