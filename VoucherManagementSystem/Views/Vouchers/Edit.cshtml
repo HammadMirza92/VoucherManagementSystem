@@ -164,7 +164,7 @@
                 <div class="col-md-2 mb-3" id="stockIncludeSection">
                     <label class="form-label">Stock Include</label>
                     <input type="text" class="form-control" id="stockIncludeText" value="@(Model.StockInclude ? "1" : "0")" maxlength="1" />
-                    <input asp-for="StockInclude" type="hidden" id="stockInclude" />
+                    <input type="hidden" name="StockInclude" id="stockInclude" value="@(Model.StockInclude ? "true" : "false")" />
                     <small class="text-muted">0=No, 1=Yes</small>
                 </div>
                 <div class="col-md-3 mb-3">
