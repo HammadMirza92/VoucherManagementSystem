@@ -136,6 +136,18 @@ namespace VoucherManagementSystem.Controllers
         {
             try
             {
+                // Validate Project is required for Purchase, Sale, Expense, and Hazri
+                if ((voucher.VoucherType == VoucherType.Purchase ||
+                     voucher.VoucherType == VoucherType.Sale ||
+                     voucher.VoucherType == VoucherType.Expense ||
+                     voucher.VoucherType == VoucherType.Hazri) &&
+                    !voucher.ProjectId.HasValue)
+                {
+                    TempData["Error"] = "Project is required for " + voucher.VoucherType + " vouchers. Please select a project.";
+                    await PrepareViewBags();
+                    return View(voucher);
+                }
+
                 // Generate transaction number
                 voucher.TransactionNumber = await _voucherRepository.GenerateTransactionNumberAsync(voucher.VoucherType);
                 voucher.CreatedBy = HttpContext.Session.GetString("Username") ?? "admin";
@@ -212,6 +224,18 @@ namespace VoucherManagementSystem.Controllers
 
             try
             {
+                // Validate Project is required for Purchase, Sale, Expense, and Hazri
+                if ((voucher.VoucherType == VoucherType.Purchase ||
+                     voucher.VoucherType == VoucherType.Sale ||
+                     voucher.VoucherType == VoucherType.Expense ||
+                     voucher.VoucherType == VoucherType.Hazri) &&
+                    !voucher.ProjectId.HasValue)
+                {
+                    TempData["Error"] = "Project is required for " + voucher.VoucherType + " vouchers. Please select a project.";
+                    await PrepareViewBags();
+                    return View(voucher);
+                }
+
                 // Get original voucher for stock/balance reversal
                 var originalVoucher = await _context.Vouchers
                     .AsNoTracking()

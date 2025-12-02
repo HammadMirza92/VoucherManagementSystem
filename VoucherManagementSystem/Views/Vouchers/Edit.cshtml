@@ -274,9 +274,21 @@
             });
 
             // On form submit, ensure stockInclude hidden field is set correctly
-            $('#voucherEditForm').on('submit', function() {
+            $('#voucherEditForm').on('submit', function(e) {
                 var value = $('#stockIncludeText').val();
                 $('#stockInclude').val(value === '1' ? 'true' : 'false');
+
+                // Validate Project is required for Purchase, Sale, Expense, and Hazri
+                var voucherType = '@Model.VoucherType';
+                var projectId = $('#ProjectId').val();
+
+                if ((voucherType === 'Purchase' || voucherType === 'Sale' ||
+                     voucherType === 'Expense' || voucherType === 'Hazri') && !projectId) {
+                    e.preventDefault();
+                    alert('Project is required for ' + voucherType + ' vouchers. Please select a project.');
+                    $('#ProjectId').focus();
+                    return false;
+                }
             });
 
             // Arrow key navigation for Select2 search boxes
