@@ -294,6 +294,19 @@ else
         <button onclick="exportTableToExcel('ledgerTable', 'CustomerLedger_@customer.Name.Replace(" ", "_")_@DateTime.Now.ToString("yyyyMMdd")')" class="btn btn-success">
             <i class="bi bi-file-earmark-excel"></i> Export to Excel
         </button>
+        <button onclick="generatePDF()" class="btn btn-danger"
+                data-customer-name="@customer.Name">
+            <i class="bi bi-file-pdf"></i> Generate PDF
+        </button>
+        <button onclick="sendToWhatsApp()" class="btn btn-success" style="background-color: #25D366; border-color: #25D366;"
+                data-customer-name="@customer.Name"
+                data-customer-phone="@customer.Phone"
+                data-from-date="@fromDate.ToString("dd-MMM-yyyy")"
+                data-to-date="@toDate.ToString("dd-MMM-yyyy")"
+                data-closing-balance="@string.Format("{0:N0}", Math.Abs(closingBalance))"
+                data-balance-type="@(closingBalance >= 0 ? "Dr" : "Cr")">
+            <i class="bi bi-whatsapp"></i> Send to WhatsApp
+        </button>
         <a asp-controller="Reports" asp-action="ExportToExcel" asp-route-reportType="customerLedger"
            asp-route-id="@customer.Id" asp-route-fromDate="@fromDate" asp-route-toDate="@toDate"
            asp-route-itemId="@ViewBag.SelectedItemId" asp-route-voucherType="@ViewBag.SelectedVoucherType" class="btn btn-warning">
@@ -309,11 +322,171 @@ else
 }
 
 @section Scripts {
+    <!-- html2pdf.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
     <script>
         $(document).ready(function() {
             // DataTables disabled for ledger table due to complex structure with opening balance row
             // The table works fine without DataTables features
         });
+
+        function generatePDF() {
+            // Show loading indicator
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-hourglass-split"></i> Generating PDF...';
+            button.disabled = true;
+
+            // Get customer name from data attribute
+            const customerName = button.getAttribute('data-customer-name') || 'Customer';
+            const timestamp = new Date().toISOString().slice(0,10).replace(/-/g,'');
+            const filename = 'CustomerLedger_' + customerName.replace(/\s+/g, '_') + '_' + timestamp + '.pdf';
+
+            // Clone the entire report content
+            const element = document.querySelector('body').cloneNode(true);
+
+            // Remove all elements with d-print-none class from clone
+            element.querySelectorAll('.d-print-none').forEach(el => el.remove());
+
+            // Configure PDF options
+            const opt = {
+                margin: [10, 10, 10, 10],
+                filename: filename,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    scrollY: 0,
+                    scrollX: 0
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait'
+                },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            // Generate PDF and download
+            html2pdf().set(opt).from(element).save().then(function() {
+                // Reset button
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }).catch(function(error) {
+                console.error('PDF generation error:', error);
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        }
+
+        function sendToWhatsApp() {
+            // Show loading indicator
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-hourglass-split"></i> Generating PDF...';
+            button.disabled = true;
+
+            // Get data from button attributes
+            const customerName = button.getAttribute('data-customer-name') || 'Customer';
+            const customerPhone = button.getAttribute('data-customer-phone') || '';
+            const fromDate = button.getAttribute('data-from-date') || '';
+            const toDate = button.getAttribute('data-to-date') || '';
+            const closingBalance = button.getAttribute('data-closing-balance') || '0';
+            const balanceType = button.getAttribute('data-balance-type') || 'Dr';
+
+            // Create filename
+            const timestamp = new Date().toISOString().slice(0,10).replace(/-/g,'');
+            const filename = 'CustomerLedger_' + customerName.replace(/\s+/g, '_') + '_' + timestamp + '.pdf';
+
+            // Clone the entire report content
+            const element = document.querySelector('body').cloneNode(true);
+
+            // Remove all elements with d-print-none class from clone
+            element.querySelectorAll('.d-print-none').forEach(el => el.remove());
+
+            // Configure PDF options
+            const opt = {
+                margin: [10, 10, 10, 10],
+                filename: filename,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    scrollY: 0,
+                    scrollX: 0
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait'
+                },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            // Generate PDF
+            html2pdf().set(opt).from(element).toPdf().get('pdf').then(function(pdf) {
+                // Create blob and download
+                const pdfBlob = pdf.output('blob');
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+
+                // Download the PDF
+                const link = document.createElement('a');
+                link.href = pdfUrl;
+                link.download = filename;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Reset button
+                button.innerHTML = originalText;
+                button.disabled = false;
+
+                // Create WhatsApp message
+                const message = encodeURIComponent(
+                    `*Customer Ledger Report*\n` +
+                    `━━━━━━━━━━━━━━━━━━━━\n` +
+                    `📋 Customer: ${customerName}\n` +
+                    `📅 Period: ${fromDate} to ${toDate}\n` +
+                    `💰 Closing Balance: Rs. ${closingBalance} ${balanceType}\n\n` +
+                    `Please find the attached ledger report PDF.`
+                );
+
+                // Clean phone number (remove spaces, dashes, etc.)
+                let phoneNumber = customerPhone.replace(/[\s\-\(\)]/g, '');
+
+                // If phone doesn't start with country code, you might want to add it
+                // For Pakistan, add +92 if not present
+                if (phoneNumber && !phoneNumber.startsWith('+')) {
+                    if (phoneNumber.startsWith('0')) {
+                        phoneNumber = '+92' + phoneNumber.substring(1);
+                    } else {
+                        phoneNumber = '+92' + phoneNumber;
+                    }
+                }
+
+                // Open WhatsApp Web with customer's phone number and message
+                let whatsappUrl;
+                if (phoneNumber) {
+                    whatsappUrl = `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${message}`;
+                } else {
+                    whatsappUrl = `https://web.whatsapp.com/send?text=${message}`;
+                }
+
+                // Small delay to ensure PDF download starts
+                setTimeout(function() {
+                    window.open(whatsappUrl, '_blank');
+                }, 500);
+
+            }).catch(function(error) {
+                console.error('PDF generation error:', error);
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        }
 
         function exportTableToExcel(tableID, filename = ''){
             var downloadLink;
