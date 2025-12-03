@@ -51,24 +51,42 @@ else
 
     <!-- Filter Form -->
     <div class="card mb-3 d-print-none">
+        <div class="card-header bg-primary text-white">
+            <h6 class="mb-0"><i class="bi bi-funnel"></i> Filter Options</h6>
+        </div>
         <div class="card-body">
             <form method="get" class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Customer</label>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Customer</label>
                     @Html.DropDownList("customerId", ViewBag.Customers as SelectList, "Select Customer", new { @class = "form-select" })
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">From Date</label>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">From Date</label>
                     <input type="date" name="fromDate" value="@fromDate.ToString("yyyy-MM-dd")" class="form-control" />
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">To Date</label>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">To Date</label>
                     <input type="date" name="toDate" value="@toDate.ToString("yyyy-MM-dd")" class="form-control" />
                 </div>
                 <div class="col-md-2">
+                    <label class="form-label fw-bold">Item</label>
+                    @Html.DropDownList("itemId", ViewBag.Items as SelectList, "-- All Items --", new { @class = "form-select" })
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Voucher Type</label>
+                    <select name="voucherType" class="form-select">
+                        <option value="">-- All Types --</option>
+                        <option value="Purchase" selected="@(ViewBag.SelectedVoucherType == "Purchase")">Purchase</option>
+                        <option value="Sale" selected="@(ViewBag.SelectedVoucherType == "Sale")">Sale</option>
+                        <option value="CashPaid" selected="@(ViewBag.SelectedVoucherType == "CashPaid")">Cash Paid</option>
+                        <option value="CashReceived" selected="@(ViewBag.SelectedVoucherType == "CashReceived")">Cash Received</option>
+                        <option value="CCR" selected="@(ViewBag.SelectedVoucherType == "CCR")">CCR</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
                     <label class="form-label">&nbsp;</label>
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-search"></i> Update
+                        <i class="bi bi-search"></i> Filter
                     </button>
                 </div>
             </form>
@@ -76,39 +94,49 @@ else
     </div>
 
     <!-- Report Header -->
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
         <div class="card-header bg-info text-white">
             <h5 class="mb-0"><i class="bi bi-person-badge"></i> @customer.Name - Ledger Account</h5>
-            <small>Period: @fromDate.ToString("dd-MMM-yyyy") to @toDate.ToString("dd-MMM-yyyy")</small>
+            <small><i class="bi bi-calendar-range"></i> Period: @fromDate.ToString("dd-MMM-yyyy") to @toDate.ToString("dd-MMM-yyyy")</small>
         </div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    <p><strong>Customer Name:</strong> @customer.Name</p>
-                    <p><strong>Phone:</strong> @customer.Phone</p>
-                    <p><strong>Address:</strong> @customer.Address</p>
+                    <div class="border-end pe-3">
+                        <p class="mb-2"><strong><i class="bi bi-person"></i> Customer Name:</strong> @customer.Name</p>
+                        <p class="mb-2"><strong><i class="bi bi-telephone"></i> Phone:</strong> @customer.Phone</p>
+                        <p class="mb-0"><strong><i class="bi bi-geo-alt"></i> Address:</strong> @customer.Address</p>
+                    </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="row text-center">
+                    <div class="row text-center g-3">
                         <div class="col-6">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h6 class="text-muted">Opening Balance</h6>
-                                    <h4 class="@(openingBalance >= 0 ? "text-success" : "text-danger")">
+                            <div class="card border-success shadow-sm">
+                                <div class="card-body bg-light">
+                                    <h6 class="text-muted mb-2 fw-bold">
+                                        <i class="bi bi-arrow-up-circle"></i> Opening Balance
+                                    </h6>
+                                    <h3 class="balance-amount @(openingBalance >= 0 ? "text-success" : "text-danger") mb-0">
                                         Rs. @string.Format("{0:N0}", Math.Abs(openingBalance))
-                                        <small>@(openingBalance >= 0 ? "Dr" : "Cr")</small>
-                                    </h4>
+                                    </h3>
+                                    <span class="badge bg-@(openingBalance >= 0 ? "success" : "danger") mt-2">
+                                        @(openingBalance >= 0 ? "Debit" : "Credit")
+                                    </span>
                                 </div>
                             </div>
                         </div>
                         <div class="col-6">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h6 class="text-muted">Closing Balance</h6>
-                                    <h4 class="@(closingBalance >= 0 ? "text-success" : "text-danger")">
+                            <div class="card border-primary shadow-sm">
+                                <div class="card-body bg-light">
+                                    <h6 class="text-muted mb-2 fw-bold">
+                                        <i class="bi bi-wallet2"></i> Closing Balance
+                                    </h6>
+                                    <h3 class="balance-amount @(closingBalance >= 0 ? "text-success" : "text-danger") mb-0">
                                         Rs. @string.Format("{0:N0}", Math.Abs(closingBalance))
-                                        <small>@(closingBalance >= 0 ? "Dr" : "Cr")</small>
-                                    </h4>
+                                    </h3>
+                                    <span class="badge bg-@(closingBalance >= 0 ? "success" : "danger") mt-2">
+                                        @(closingBalance >= 0 ? "Debit" : "Credit")
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -119,33 +147,33 @@ else
     </div>
 
     <!-- Ledger Transactions -->
-    <div class="card">
-        <div class="card-header">
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
             <h5 class="mb-0"><i class="bi bi-list-ul"></i> Transaction Details</h5>
         </div>
-        <div class="card-body">
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-sm table-bordered" id="ledgerTable">
-                    <thead class="table-dark">
+                <table class="table table-hover table-bordered mb-0" id="ledgerTable">
+                    <thead class="table-primary">
                         <tr>
-                            <th>Date</th>
-                            <th>Transaction No.</th>
-                            <th>Type</th>
-                            <th>Particulars</th>
-                            <th class="text-end">Debit (Dr)</th>
-                            <th class="text-end">Credit (Cr)</th>
-                            <th class="text-end">Balance</th>
+                            <th class="fw-bold" style="font-size: 14px;">Date</th>
+                            <th class="fw-bold" style="font-size: 14px;">Transaction No.</th>
+                            <th class="fw-bold" style="font-size: 14px;">Type</th>
+                            <th class="fw-bold" style="font-size: 14px;">Particulars</th>
+                            <th class="text-end fw-bold" style="font-size: 14px;">Debit (Dr)</th>
+                            <th class="text-end fw-bold" style="font-size: 14px;">Credit (Cr)</th>
+                            <th class="text-end fw-bold" style="font-size: 14px;">Balance</th>
                         </tr>
                     </thead>
                     <tbody>
                         <!-- Opening Balance Row -->
-                        <tr class="table-secondary">
-                            <td>@fromDate.ToString("dd-MMM-yyyy")</td>
-                            <td colspan="3"><strong>Opening Balance</strong></td>
-                            <td class="text-end">@(openingBalance > 0 ? string.Format("{0:N0}", openingBalance) : "-")</td>
-                            <td class="text-end">@(openingBalance < 0 ? string.Format("{0:N0}", Math.Abs(openingBalance)) : "-")</td>
-                            <td class="text-end">
-                                <strong>@string.Format("{0:N0}", Math.Abs(openingBalance)) @(openingBalance >= 0 ? "Dr" : "Cr")</strong>
+                        <tr class="table-warning">
+                            <td class="fw-semibold">@fromDate.ToString("dd-MMM-yyyy")</td>
+                            <td colspan="3" class="fw-bold fs-6">Opening Balance</td>
+                            <td class="text-end fw-semibold">@(openingBalance > 0 ? string.Format("{0:N0}", openingBalance) : "-")</td>
+                            <td class="text-end fw-semibold">@(openingBalance < 0 ? string.Format("{0:N0}", Math.Abs(openingBalance)) : "-")</td>
+                            <td class="text-end fw-bold">
+                                @string.Format("{0:N0}", Math.Abs(openingBalance)) @(openingBalance >= 0 ? "Dr" : "Cr")
                             </td>
                         </tr>
 
@@ -203,22 +231,22 @@ else
 
                                 runningBalance += debit - credit;
 
-                                <tr>
-                                    <td>@voucher.VoucherDate.ToString("dd-MMM-yyyy")</td>
-                                    <td>@voucher.TransactionNumber</td>
-                                    <td>
+                                <tr style="font-size: 13px;">
+                                    <td class="align-middle">@voucher.VoucherDate.ToString("dd-MMM-yyyy")</td>
+                                    <td class="align-middle">@voucher.TransactionNumber</td>
+                                    <td class="align-middle">
                                         <span class="badge bg-@(voucher.VoucherType == VoucherManagementSystem.Models.VoucherType.Purchase ? "primary" :
                                                               voucher.VoucherType == VoucherManagementSystem.Models.VoucherType.Sale ? "success" :
-                                                              voucher.VoucherType == VoucherManagementSystem.Models.VoucherType.CashPaid ? "warning" :
-                                                              voucher.VoucherType == VoucherManagementSystem.Models.VoucherType.CashReceived ? "info" : "secondary")">
+                                                              voucher.VoucherType == VoucherManagementSystem.Models.VoucherType.CashPaid ? "warning text-dark" :
+                                                              voucher.VoucherType == VoucherManagementSystem.Models.VoucherType.CashReceived ? "info" : "secondary")" style="font-size: 11px;">
                                             @voucher.VoucherType
                                         </span>
                                     </td>
-                                    <td>@particulars</td>
-                                    <td class="text-end">@(debit > 0 ? string.Format("{0:N0}", debit) : "-")</td>
-                                    <td class="text-end">@(credit > 0 ? string.Format("{0:N0}", credit) : "-")</td>
-                                    <td class="text-end">
-                                        <strong>@string.Format("{0:N0}", Math.Abs(runningBalance)) @(runningBalance >= 0 ? "Dr" : "Cr")</strong>
+                                    <td class="align-middle">@particulars</td>
+                                    <td class="text-end align-middle @(debit > 0 ? "text-success fw-semibold" : "")">@(debit > 0 ? string.Format("{0:N0}", debit) : "-")</td>
+                                    <td class="text-end align-middle @(credit > 0 ? "text-danger fw-semibold" : "")">@(credit > 0 ? string.Format("{0:N0}", credit) : "-")</td>
+                                    <td class="text-end align-middle fw-bold @(runningBalance >= 0 ? "text-success" : "text-danger")">
+                                        @string.Format("{0:N0}", Math.Abs(runningBalance)) @(runningBalance >= 0 ? "Dr" : "Cr")
                                     </td>
                                 </tr>
                             }
@@ -226,16 +254,18 @@ else
                         else
                         {
                             <tr>
-                                <td colspan="7" class="text-center">No transactions found for the selected period.</td>
+                                <td colspan="7" class="text-center text-muted py-4 fst-italic">
+                                    <i class="bi bi-info-circle"></i> No transactions found for the selected filters.
+                                </td>
                             </tr>
                         }
                     </tbody>
-                    <tfoot class="table-dark">
-                        <tr>
-                            <th colspan="4" class="text-end">Total:</th>
-                            <th class="text-end">Rs. @string.Format("{0:N0}", totalDebit)</th>
-                            <th class="text-end">Rs. @string.Format("{0:N0}", totalCredit)</th>
-                            <th class="text-end">
+                    <tfoot class="table-success">
+                        <tr style="font-size: 15px;">
+                            <th colspan="4" class="text-end fw-bold py-3">TOTAL:</th>
+                            <th class="text-end text-success fw-bold py-3">Rs. @string.Format("{0:N0}", totalDebit)</th>
+                            <th class="text-end text-danger fw-bold py-3">Rs. @string.Format("{0:N0}", totalCredit)</th>
+                            <th class="text-end fw-bold py-3 @(closingBalance >= 0 ? "text-success" : "text-danger")">
                                 Rs. @string.Format("{0:N0}", Math.Abs(closingBalance)) @(closingBalance >= 0 ? "Dr" : "Cr")
                             </th>
                         </tr>
@@ -254,7 +284,8 @@ else
             <i class="bi bi-file-earmark-excel"></i> Export to Excel
         </button>
         <a asp-controller="Reports" asp-action="ExportToExcel" asp-route-reportType="customerLedger"
-           asp-route-id="@customer.Id" asp-route-fromDate="@fromDate" asp-route-toDate="@toDate" class="btn btn-warning">
+           asp-route-id="@customer.Id" asp-route-fromDate="@fromDate" asp-route-toDate="@toDate"
+           asp-route-itemId="@ViewBag.SelectedItemId" asp-route-voucherType="@ViewBag.SelectedVoucherType" class="btn btn-warning">
             <i class="bi bi-download"></i> Download Full Report
         </a>
         <a asp-action="CustomerLedger" class="btn btn-secondary">
@@ -297,6 +328,62 @@ else
     </script>
 
     <style>
+        /* Enhanced table styling */
+        #ledgerTable thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #cfe2ff !important;
+            border-bottom: 2px solid #0d6efd;
+            padding: 12px 8px;
+        }
+
+        #ledgerTable tbody tr:hover {
+            background-color: #f8f9fa;
+            cursor: pointer;
+            transform: scale(1.01);
+            transition: all 0.2s ease;
+        }
+
+        #ledgerTable {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            font-size: 1.1rem;
+            padding: 15px 20px;
+        }
+
+        .table-responsive {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        /* Custom scrollbar */
+        .table-responsive::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Balance amount styling */
+        .balance-amount {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
         @@media print {
             .card {
                 page-break-inside: avoid;
@@ -309,6 +396,15 @@ else
             .badge {
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+            }
+
+            .table-responsive {
+                max-height: none;
+                overflow: visible;
+            }
+
+            #ledgerTable thead th {
+                position: relative;
             }
         }
     </style>

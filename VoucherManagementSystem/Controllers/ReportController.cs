@@ -936,7 +936,7 @@ namespace VoucherManagementSystem.Controllers
         }
 
         // GET: Reports/CustomerLedger
-        public async Task<IActionResult> CustomerLedger(int? customerId, DateTime? fromDate, DateTime? toDate)
+        public async Task<IActionResult> CustomerLedger(int? customerId, DateTime? fromDate, DateTime? toDate, int? itemId, string? voucherType)
         {
             try
             {
@@ -962,7 +962,7 @@ namespace VoucherManagementSystem.Controllers
                 var openingBalance = await GetCustomerOpeningBalanceAsync(customerId.Value, startDate);
 
                 // Get all transactions for the customer in the date range
-                var vouchers = await _context.Vouchers
+                var query = _context.Vouchers
                     .Include(v => v.PurchasingCustomer)
                     .Include(v => v.ReceivingCustomer)
                     .Include(v => v.Item)
@@ -972,6 +972,21 @@ namespace VoucherManagementSystem.Controllers
                                 v.ReceivingCustomerId == customerId.Value) &&
                                v.VoucherDate >= startDate &&
                                v.VoucherDate <= endDate.AddDays(1))
+                    .AsQueryable();
+
+                // Apply item filter if selected
+                if (itemId.HasValue && itemId.Value > 0)
+                {
+                    query = query.Where(v => v.ItemId == itemId.Value);
+                }
+
+                // Apply voucher type filter if selected
+                if (!string.IsNullOrEmpty(voucherType) && Enum.TryParse<VoucherType>(voucherType, out var vType))
+                {
+                    query = query.Where(v => v.VoucherType == vType);
+                }
+
+                var vouchers = await query
                     .OrderBy(v => v.VoucherDate)
                     .ThenBy(v => v.Id)
                     .ToListAsync();
@@ -1016,6 +1031,8 @@ namespace VoucherManagementSystem.Controllers
                     }
                 }
 
+                // Populate filter dropdowns
+                ViewBag.Items = new SelectList(await _itemRepository.GetActiveItemsAsync(), "Id", "Name", itemId);
                 ViewBag.Customer = customer;
                 ViewBag.FromDate = startDate;
                 ViewBag.ToDate = endDate;
@@ -1025,6 +1042,8 @@ namespace VoucherManagementSystem.Controllers
                 ViewBag.ClosingBalance = openingBalance + totalDebit - totalCredit;
                 ViewBag.Vouchers = vouchers;
                 ViewBag.Customers = new SelectList(await _customerRepository.GetActiveCustomersAsync(), "Id", "Name", customerId);
+                ViewBag.SelectedItemId = itemId;
+                ViewBag.SelectedVoucherType = voucherType;
 
                 return View();
             }
