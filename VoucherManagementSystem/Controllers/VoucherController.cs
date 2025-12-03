@@ -117,7 +117,7 @@ namespace VoucherManagementSystem.Controllers
         }
 
         // GET: Vouchers/GeneralCreate
-        public async Task<IActionResult> GeneralCreate(int page = 1, int pageSize = 10)
+        public async Task<IActionResult> GeneralCreate(int? page = null, int pageSize = 10)
         {
             var voucher = new Voucher
             {
@@ -134,13 +134,19 @@ namespace VoucherManagementSystem.Controllers
             // Calculate pagination
             var totalRecords = filteredVouchers.Count;
             var totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
+
+            // If no page specified, show the last page (most recent entries)
+            var currentPage = page ?? totalPages;
+            if (currentPage < 1) currentPage = 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+
             var voucherList = filteredVouchers
-                .Skip((page - 1) * pageSize)
+                .Skip((currentPage - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
 
             ViewBag.VoucherList = voucherList;
-            ViewBag.CurrentPage = page;
+            ViewBag.CurrentPage = currentPage;
             ViewBag.TotalPages = totalPages;
             ViewBag.TotalRecords = totalRecords;
             ViewBag.PageSize = pageSize;
@@ -187,7 +193,7 @@ namespace VoucherManagementSystem.Controllers
         // POST: Vouchers/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Voucher voucher)
+        public async Task<IActionResult> Create(Voucher voucher, bool returnToGeneral = false)
         {
             try
             {
@@ -239,9 +245,8 @@ namespace VoucherManagementSystem.Controllers
                 await _voucherRepository.AddAsync(voucher);
                 TempData["Success"] = "Voucher created successfully!";
 
-                // Check if request is from GeneralCreate page
-                var referer = Request.Headers["Referer"].ToString();
-                if (referer.Contains("/GeneralCreate", StringComparison.OrdinalIgnoreCase))
+                // Check if should return to GeneralCreate page
+                if (returnToGeneral)
                 {
                     return RedirectToAction(nameof(GeneralCreate));
                 }
@@ -255,9 +260,8 @@ namespace VoucherManagementSystem.Controllers
 
             await PrepareViewBags();
 
-            // Check if request is from GeneralCreate page for error handling
-            var errorReferer = Request.Headers["Referer"].ToString();
-            if (errorReferer.Contains("/GeneralCreate", StringComparison.OrdinalIgnoreCase))
+            // Check if should return to GeneralCreate page for error handling
+            if (returnToGeneral)
             {
                 return View("GeneralCreate", voucher);
             }
