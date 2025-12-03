@@ -20,6 +20,27 @@
             width: 100%;
             font-size: calc(1rem + 2px);
         }
+
+        /* Consistent field sizes in table */
+        #voucherForm table td {
+            min-width: 120px;
+            width: auto;
+        }
+
+        /* Make all form controls same height */
+        #voucherForm .form-control,
+        #voucherForm .form-select,
+        #voucherForm .form-control-sm,
+        #voucherForm .form-select-sm {
+            height: auto;
+            min-height: 38px;
+        }
+
+        /* Top row equal width fields */
+        .top-fields-row .col-equal {
+            flex: 1;
+            max-width: none;
+        }
     </style>
 }
 
@@ -137,24 +158,24 @@
     <div class="card-body">
         <form asp-action="Create" id="voucherForm">
             <input type="hidden" name="returnToGeneral" value="true" />
-            <!-- Top 3 Fields: Voucher Type, Transaction Number, and Date -->
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <label asp-for="VoucherType" class="form-label"><strong>Voucher Type</strong></label>
+            <!-- Top Fields: Transaction Number, Date, and Voucher Type -->
+            <div class="row mb-3 top-fields-row">
+                <div class="col-equal">
+                    <label asp-for="TransactionNumber" class="form-label">Transaction Number</label>
+                    <input asp-for="TransactionNumber" class="form-control" id="TransactionNumber" readonly />
+                </div>
+                <div class="col-equal">
+                    <label asp-for="VoucherDate" class="form-label">Voucher Date</label>
+                    <input asp-for="VoucherDate" type="date" class="form-control" />
+                </div>
+                <div class="col-equal">
+                    <label asp-for="VoucherType" class="form-label">Voucher Type</label>
                     <select asp-for="VoucherType" class="form-select" id="voucherTypeSelect">
                         @foreach (var type in Enum.GetValues<VoucherManagementSystem.Models.VoucherType>())
                         {
                             <option value="@type">@type</option>
                         }
                     </select>
-                </div>
-                <div class="col-md-3">
-                    <label asp-for="TransactionNumber" class="form-label"><strong>Transaction Number</strong></label>
-                    <input asp-for="TransactionNumber" class="form-control" id="TransactionNumber" readonly />
-                </div>
-                <div class="col-md-3">
-                    <label asp-for="VoucherDate" class="form-label"><strong>Voucher Date</strong></label>
-                    <input asp-for="VoucherDate" type="date" class="form-control" />
                 </div>
             </div>
 
@@ -270,7 +291,7 @@
                             </td>
 
                             <!-- Column 5: Item -->
-                            <td id="itemColumn" style="display:none; vertical-align: top; padding: 8px;">
+                            <td id="itemColumn" style="display:none; vertical-align: top; padding: 8px; min-width: 180px;">
                                 <label asp-for="ItemId" class="form-label mb-1" style="font-size: 0.85rem;">Item</label>
                                 @Html.DropDownListFor(m => m.ItemId, ViewBag.Items as SelectList, "Select Item", new { @class = "form-select form-select-sm", id = "itemSelect" })
                             </td>
