@@ -204,12 +204,13 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function() {
-            $('#bankStatementTable').DataTable({
-                "order": [[0, "asc"]],
-                "pageLength": 50
-            });
-        });
+        // DataTable disabled due to colspan rows in footer/header causing column count mismatch
+        // $(document).ready(function() {
+        //     $('#bankStatementTable').DataTable({
+        //         "order": [[0, "asc"]],
+        //         "pageLength": 50
+        //     });
+        // });
 
         function exportTableToExcel(tableID, filename = ''){
             var downloadLink;
