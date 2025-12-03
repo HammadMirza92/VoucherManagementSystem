@@ -130,7 +130,7 @@ namespace VoucherManagementSystem.Controllers
             var allVouchers = await _voucherRepository.GetVouchersWithDetailsAsync();
             var filteredVouchers = allVouchers
                 .Where(v => v.VoucherType == voucherType)
-                .OrderByDescending(v => v.CreatedDate)
+                .OrderBy(v => v.CreatedDate)
                 .ToList();
 
             // Calculate pagination
