@@ -23,11 +23,11 @@ namespace VoucherManagementSystem.Data
             // Seed Customers
             var customers = new Customer[]
             {
-                new Customer { Name = "General Customer", Phone = "0300-0000000", Address = "Main Market", IsActive = true },
-                new Customer { Name = "ABC Trading", Phone = "0321-1234567", Address = "Industrial Area", IsActive = true },
-                new Customer { Name = "XYZ Corporation", Phone = "0333-7654321", Address = "Business District", IsActive = true },
-                new Customer { Name = "Ahmed Enterprises", Phone = "0345-5555555", Address = "Commercial Zone", IsActive = true },
-                new Customer { Name = "Ali & Sons", Phone = "0312-9999999", Address = "City Center", IsActive = true }
+                new Customer { Name = "Wajid Mandi", Phone = "0300-0000000", Address = "Mandi shah jiwna", IsActive = true },
+                new Customer { Name = "Muddasr Jutt", Phone = "0321-1234567", Address = "Jhang city", IsActive = true },
+                new Customer { Name = "Salman Bkr", Phone = "0333-7654321", Address = "Bhakkar road", IsActive = true },
+                new Customer { Name = "Shahid Loom", Phone = "0345-5555555", Address = "Adhi wal", IsActive = true },
+                new Customer { Name = "Bhai Bilal", Phone = "0312-9999999", Address = "Chiniot road", IsActive = true }
             };
             context.Customers.AddRange(customers);
             context.SaveChanges();
@@ -35,13 +35,11 @@ namespace VoucherManagementSystem.Data
             // Seed Items
             var items = new Item[]
             {
-                new Item { Name = "Cement", Unit = "Bag", StockTrackingEnabled = true, CurrentStock = 100, DefaultRate = 1250 },
-                new Item { Name = "Steel", Unit = "Ton", StockTrackingEnabled = true, CurrentStock = 50, DefaultRate = 185000 },
-                new Item { Name = "Bricks", Unit = "Thousand", StockTrackingEnabled = true, CurrentStock = 200, DefaultRate = 12000 },
-                new Item { Name = "Sand", Unit = "Truck", StockTrackingEnabled = true, CurrentStock = 30, DefaultRate = 45000 },
-                new Item { Name = "Crush", Unit = "Truck", StockTrackingEnabled = true, CurrentStock = 25, DefaultRate = 55000 },
-                new Item { Name = "Paint", Unit = "Gallon", StockTrackingEnabled = true, CurrentStock = 80, DefaultRate = 3500 },
-                new Item { Name = "Tiles", Unit = "Box", StockTrackingEnabled = true, CurrentStock = 150, DefaultRate = 2800 }
+                new Item { Name = "Karak bottle", Unit = "", StockTrackingEnabled = true, CurrentStock = 0, DefaultRate = 0 },
+                new Item { Name = "Scrap", Unit = "", StockTrackingEnabled = true, CurrentStock = 0, DefaultRate = 0 },
+                new Item { Name = "Gatta", Unit = "", StockTrackingEnabled = true, CurrentStock = 0, DefaultRate = 0 },
+                new Item { Name = "Kapi", Unit = "", StockTrackingEnabled = true, CurrentStock = 0, DefaultRate = 0 },
+                new Item { Name = "kitab", Unit = "", StockTrackingEnabled = true, CurrentStock = 0, DefaultRate = 0 },
             };
             context.Items.AddRange(items);
             context.SaveChanges();
@@ -49,11 +47,11 @@ namespace VoucherManagementSystem.Data
             // Seed Banks
             var banks = new Bank[]
             {
-                new Bank { Name = "HBL", AccountNumber = "1234567890", Balance = 500000, Details = "Main Branch Account" },
-                new Bank { Name = "MCB", AccountNumber = "0987654321", Balance = 750000, Details = "Corporate Account" },
-                new Bank { Name = "UBL", AccountNumber = "1122334455", Balance = 300000, Details = "Business Account" },
-                new Bank { Name = "Allied Bank", AccountNumber = "5544332211", Balance = 450000, Details = "Current Account" },
-                new Bank { Name = "Meezan Bank", AccountNumber = "9988776655", Balance = 600000, Details = "Islamic Banking Account" }
+                new Bank { Name = "HBL", AccountNumber = "1234567890", Balance = 100000, Details = "Main Branch Account" },
+                new Bank { Name = "MCB", AccountNumber = "0987654321", Balance = 100000, Details = "Corporate Account" },
+                new Bank { Name = "UBL", AccountNumber = "1122334455", Balance = 100000, Details = "Business Account" },
+                new Bank { Name = "Allied Bank", AccountNumber = "5544332211", Balance = 100000, Details = "Current Account" },
+                new Bank { Name = "Meezan Bank", AccountNumber = "9988776655", Balance = 100000, Details = "Islamic Banking Account" }
             };
             context.Banks.AddRange(banks);
             context.SaveChanges();
@@ -77,28 +75,28 @@ namespace VoucherManagementSystem.Data
             {
                 new Project
                 {
-                    Name = "Plaza Construction",
+                    Name = "Project Karak bottle",
                     Description = "5-story commercial plaza project",
                     StartDate = DateTime.Now.AddMonths(-3),
                     IsActive = true
                 },
                 new Project
                 {
-                    Name = "Residential Complex",
+                    Name = "Project Scrap",
                     Description = "50 houses residential project",
                     StartDate = DateTime.Now.AddMonths(-6),
                     IsActive = true
                 },
                 new Project
                 {
-                    Name = "Highway Bridge",
+                    Name = "Project Gata",
                     Description = "Government infrastructure project",
                     StartDate = DateTime.Now.AddMonths(-1),
                     IsActive = true
                 },
                 new Project
                 {
-                    Name = "Shopping Mall",
+                    Name = "Project Kapi",
                     Description = "Modern shopping center development",
                     StartDate = DateTime.Now.AddMonths(-2),
                     IsActive = true
