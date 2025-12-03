@@ -116,6 +116,39 @@ namespace VoucherManagementSystem.Controllers
             return View(voucher);
         }
 
+        // GET: Vouchers/GeneralCreate
+        public async Task<IActionResult> GeneralCreate(int page = 1, int pageSize = 10)
+        {
+            var voucher = new Voucher
+            {
+                VoucherType = VoucherType.Purchase,
+                VoucherDate = DateTime.Now
+            };
+
+            // Get all recent vouchers (all types)
+            var allVouchers = await _voucherRepository.GetVouchersWithDetailsAsync();
+            var filteredVouchers = allVouchers
+                .OrderBy(v => v.CreatedDate)
+                .ToList();
+
+            // Calculate pagination
+            var totalRecords = filteredVouchers.Count;
+            var totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
+            var voucherList = filteredVouchers
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            ViewBag.VoucherList = voucherList;
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalRecords = totalRecords;
+            ViewBag.PageSize = pageSize;
+
+            await PrepareViewBags();
+            return View(voucher);
+        }
+
         // GET: Vouchers/Create
         public async Task<IActionResult> Create(VoucherType? type, int page = 1, int pageSize = 10)
         {
