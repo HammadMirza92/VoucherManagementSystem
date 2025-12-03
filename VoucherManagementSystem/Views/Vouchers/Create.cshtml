@@ -118,147 +118,246 @@
         <form asp-action="Create" id="voucherForm">
             <input type="hidden" asp-for="VoucherType" />
 
-            <div class="row">
-                <div class="col-md-3 mb-3">
-                    <label asp-for="TransactionNumber" class="form-label">Transaction Number</label>
+            <!-- Transaction Number and Date on top -->
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label asp-for="TransactionNumber" class="form-label"><strong>Transaction Number</strong></label>
                     <input asp-for="TransactionNumber" class="form-control" readonly />
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label asp-for="VoucherDate" class="form-label">Voucher Date</label>
+                <div class="col-md-3">
+                    <label asp-for="VoucherDate" class="form-label"><strong>Voucher Date</strong></label>
                     <input asp-for="VoucherDate" type="date" class="form-control" />
                 </div>
-                <div class="col-md-3 mb-3" id="projectSection">
-                    <label asp-for="ProjectId" class="form-label">Project</label>
-                    @Html.DropDownListFor(m => m.ProjectId, ViewBag.Projects as SelectList, "Select Project", new { @class = "form-select" })
-                </div>
-                <div class="col-md-3 mb-3" id="cashTypeSection">
-                    <label asp-for="CashType" class="form-label">Cash Type</label>
-                    <select asp-for="CashType" class="form-select" id="cashType">
-                        <option value="">Select Type</option>
-                        @foreach (var type in Enum.GetValues<VoucherManagementSystem.Models.CashType>())
-                        {
-                            <option value="@type">@type</option>
-                        }
-                    </select>
-                </div>
             </div>
 
-            <div class="row" id="purchasingCustomerSection">
-                <div class="col-md-4 mb-3">
-                    <label asp-for="PurchasingCustomerId" class="form-label">Purchasing Customer</label>
-                    <div class="input-group">
-                        @Html.DropDownListFor(m => m.PurchasingCustomerId, ViewBag.Customers as SelectList, "Select Customer", new { @class = "form-select", id = "purchasingCustomer" })
-                        <button type="button" class="btn btn-outline-secondary" id="copyPurchasingCustomerName" title="Copy customer name to details">
-                            <i class="bi bi-clipboard"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="col-md-8 mb-3">
-                    <label asp-for="PurchasingCustomerDetails" class="form-label">Purchasing Customer Details</label>
-                    <input asp-for="PurchasingCustomerDetails" class="form-control" id="purchasingCustomerDetails" />
-                </div>
+            <!-- Single Row Layout with Multiple Sub-rows -->
+            <div class="table-responsive">
+                <table class="table table-bordered" style="table-layout: auto; white-space: nowrap;">
+                    <tbody>
+                        <tr>
+                            <!-- Column 1: Project & Cash Type -->
+                            <td id="projectCashTypeColumn" style="vertical-align: top; padding: 8px;">
+                                <table class="w-100">
+                                    <tr id="projectRow">
+                                        <td style="padding: 2px;">
+                                            <label asp-for="ProjectId" class="form-label mb-1" style="font-size: 0.85rem;">Project</label>
+                                            @Html.DropDownListFor(m => m.ProjectId, ViewBag.Projects as SelectList, "Select Project", new { @class = "form-select form-select-sm" })
+                                        </td>
+                                    </tr>
+                                    <tr id="cashTypeRow">
+                                        <td style="padding: 2px;">
+                                            <label asp-for="CashType" class="form-label mb-1" style="font-size: 0.85rem;">Cash Type</label>
+                                            <select asp-for="CashType" class="form-select form-select-sm" id="cashType">
+                                                <option value="">Select Type</option>
+                                                @foreach (var type in Enum.GetValues<VoucherManagementSystem.Models.CashType>())
+                                                {
+                                                    <option value="@type">@type</option>
+                                                }
+                                            </select>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+
+                            <!-- Column 2: Bank Details (shown when Cash Type = Bank) -->
+                            <td id="bankColumn" style="display:none; vertical-align: top; padding: 8px;">
+                                <table class="w-100">
+                                    <tr id="bankPaidRow">
+                                        <td style="padding: 2px;">
+                                            <label asp-for="BankCustomerPaidId" class="form-label mb-1" style="font-size: 0.85rem;">Bank Paid</label>
+                                            @Html.DropDownListFor(m => m.BankCustomerPaidId, ViewBag.Banks as SelectList, "Select Bank", new { @class = "form-select form-select-sm" })
+                                        </td>
+                                    </tr>
+                                    <tr id="bankPaidDetailsRow">
+                                        <td style="padding: 2px;">
+                                            <label asp-for="BankCustomerPaidDetails" class="form-label mb-1" style="font-size: 0.85rem;">Bank Paid Details</label>
+                                            <input asp-for="BankCustomerPaidDetails" class="form-control form-control-sm" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+
+                            <!-- Column 2b: Bank Receiver (for certain voucher types) -->
+                            <td id="bankReceiverColumn" style="display:none; vertical-align: top; padding: 8px;">
+                                <table class="w-100">
+                                    <tr id="bankReceiverRow">
+                                        <td style="padding: 2px;">
+                                            <label asp-for="BankCustomerReceiverId" class="form-label mb-1" style="font-size: 0.85rem;">Bank Receiver</label>
+                                            @Html.DropDownListFor(m => m.BankCustomerReceiverId, ViewBag.Banks as SelectList, "Select Bank", new { @class = "form-select form-select-sm" })
+                                        </td>
+                                    </tr>
+                                    <tr id="bankReceiverDetailsRow">
+                                        <td style="padding: 2px;">
+                                            <label asp-for="BankCustomerReceiverDetails" class="form-label mb-1" style="font-size: 0.85rem;">Bank Receiver Details</label>
+                                            <input asp-for="BankCustomerReceiverDetails" class="form-control form-control-sm" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+
+                            <!-- Column 3: Purchasing Customer -->
+                            <td id="purchasingCustomerColumn" style="display:none; vertical-align: top; padding: 8px;">
+                                <table class="w-100">
+                                    <tr>
+                                        <td style="padding: 2px;">
+                                            <label asp-for="PurchasingCustomerId" class="form-label mb-1" style="font-size: 0.85rem;">Purchasing Customer</label>
+                                            <div class="input-group input-group-sm">
+                                                @Html.DropDownListFor(m => m.PurchasingCustomerId, ViewBag.Customers as SelectList, "Select Customer", new { @class = "form-select form-select-sm", id = "purchasingCustomer" })
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" id="copyPurchasingCustomerName" title="Copy">
+                                                    <i class="bi bi-clipboard"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 2px;">
+                                            <label asp-for="PurchasingCustomerDetails" class="form-label mb-1" style="font-size: 0.85rem;">Customer Details</label>
+                                            <input asp-for="PurchasingCustomerDetails" class="form-control form-control-sm" id="purchasingCustomerDetails" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+
+                            <!-- Column 4: Receiving Customer -->
+                            <td id="receivingCustomerColumn" style="display:none; vertical-align: top; padding: 8px;">
+                                <table class="w-100">
+                                    <tr>
+                                        <td style="padding: 2px;">
+                                            <label asp-for="ReceivingCustomerId" class="form-label mb-1" style="font-size: 0.85rem;">Receiving Customer</label>
+                                            <div class="input-group input-group-sm">
+                                                @Html.DropDownListFor(m => m.ReceivingCustomerId, ViewBag.Customers as SelectList, "Select Customer", new { @class = "form-select form-select-sm", id = "receivingCustomer" })
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" id="copyReceivingCustomerName" title="Copy">
+                                                    <i class="bi bi-clipboard"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 2px;">
+                                            <label asp-for="ReceivingCustomerDetails" class="form-label mb-1" style="font-size: 0.85rem;">Customer Details</label>
+                                            <input asp-for="ReceivingCustomerDetails" class="form-control form-control-sm" id="receivingCustomerDetails" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+
+                            <!-- Column 5: Item -->
+                            <td id="itemColumn" style="display:none; vertical-align: top; padding: 8px;">
+                                <label asp-for="ItemId" class="form-label mb-1" style="font-size: 0.85rem;">Item</label>
+                                @Html.DropDownListFor(m => m.ItemId, ViewBag.Items as SelectList, "Select Item", new { @class = "form-select form-select-sm", id = "itemSelect" })
+                            </td>
+
+                            <!-- Column 6: Mon & Weight -->
+                            <td id="monWeightColumn" style="display:none; vertical-align: top; padding: 8px;">
+                                <table class="w-100">
+                                    <tr>
+                                        <td style="padding: 2px;">
+                                            <label asp-for="Mon" class="form-label mb-1" style="font-size: 0.85rem;">Mon</label>
+                                            <input asp-for="Mon" class="form-control form-control-sm" id="Mon" type="number" step="0.001" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 2px;">
+                                            <label asp-for="Weight" class="form-label mb-1" style="font-size: 0.85rem;">Weight</label>
+                                            <input asp-for="Weight" type="number" step="0.001" class="form-control form-control-sm" id="weight" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+
+                            <!-- Column 7: Kat & Quantity -->
+                            <td id="katQuantityColumn" style="display:none; vertical-align: top; padding: 8px;">
+                                <table class="w-100">
+                                    <tr>
+                                        <td style="padding: 2px;">
+                                            <label asp-for="Kat" class="form-label mb-1" style="font-size: 0.85rem;">Kat</label>
+                                            <input asp-for="Kat" type="number" step="0.001" class="form-control form-control-sm" id="kat" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 2px;">
+                                            <label asp-for="Quantity" class="form-label mb-1" style="font-size: 0.85rem;">Quantity</label>
+                                            <input asp-for="Quantity" type="number" step="0.001" class="form-control form-control-sm" id="quantity" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+
+                            <!-- Column 8: Expense Head (3 rows) -->
+                            <td id="expenseHeadColumn" style="display:none; vertical-align: top; padding: 8px;">
+                                <table class="w-100">
+                                    <tr>
+                                        <td style="padding: 2px;">
+                                            <label asp-for="ExpenseHeadId" class="form-label mb-1" style="font-size: 0.85rem;">Expense Head</label>
+                                            @Html.DropDownListFor(m => m.ExpenseHeadId, ViewBag.ExpenseHeads as SelectList, "Select Expense Head", new { @class = "form-select form-select-sm", id = "expenseHead" })
+                                        </td>
+                                    </tr>
+                                    <tr id="expenseRateRow">
+                                        <td style="padding: 2px;">
+                                            <label asp-for="ExpenseHeadRate" class="form-label mb-1" style="font-size: 0.85rem;">Expense Rate</label>
+                                            <input asp-for="ExpenseHeadRate" type="number" step="0.01" class="form-control form-control-sm" id="expenseHeadRate" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 2px;">
+                                            <label asp-for="ExpenseHeadDetails" class="form-label mb-1" style="font-size: 0.85rem;">Expense Details</label>
+                                            <input asp-for="ExpenseHeadDetails" class="form-control form-control-sm" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+
+                            <!-- Column 9: Rate & Amount -->
+                            <td id="rateAmountColumn" style="vertical-align: top; padding: 8px;">
+                                <table class="w-100">
+                                    <tr id="rateRow">
+                                        <td style="padding: 2px;">
+                                            <label asp-for="Rate" class="form-label mb-1" style="font-size: 0.85rem;">Rate</label>
+                                            <input asp-for="Rate" type="number" step="0.01" class="form-control form-control-sm" id="rate" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 2px;">
+                                            <label asp-for="Amount" class="form-label mb-1" style="font-size: 0.85rem;">Amount</label>
+                                            <input asp-for="Amount" type="number" step="0.01" class="form-control form-control-sm" id="amount" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+
+                            <!-- Column 10: Gari No & Stock -->
+                            <td id="gariStockColumn" style="display:none; vertical-align: top; padding: 8px;">
+                                <table class="w-100">
+                                    <tr>
+                                        <td style="padding: 2px;">
+                                            <label asp-for="GariNo" class="form-label mb-1" style="font-size: 0.85rem;">Gari No.</label>
+                                            <input asp-for="GariNo" class="form-control form-control-sm" />
+                                        </td>
+                                    </tr>
+                                    <tr id="stockIncludeRow">
+                                        <td style="padding: 2px;">
+                                            <label class="form-label mb-1" style="font-size: 0.85rem;">Stock (0/1)</label>
+                                            <input type="text" class="form-control form-control-sm" id="stockIncludeText" value="0" maxlength="1" />
+                                            <input type="hidden" name="StockInclude" id="stockInclude" value="false" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+
+                            <!-- Submit Button Column -->
+                            <td style="vertical-align: middle; padding: 8px;">
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <i class="bi bi-check-circle"></i> Save
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
-            <div class="row" id="receivingCustomerSection" style="display:none;">
-                <div class="col-md-4 mb-3">
-                    <label asp-for="ReceivingCustomerId" class="form-label">Receiving Customer</label>
-                    <div class="input-group">
-                        @Html.DropDownListFor(m => m.ReceivingCustomerId, ViewBag.Customers as SelectList, "Select Customer", new { @class = "form-select", id = "receivingCustomer" })
-                        <button type="button" class="btn btn-outline-secondary" id="copyReceivingCustomerName" title="Copy customer name to details">
-                            <i class="bi bi-clipboard"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="col-md-8 mb-3">
-                    <label asp-for="ReceivingCustomerDetails" class="form-label">Receiving Customer Details</label>
-                    <input asp-for="ReceivingCustomerDetails" class="form-control" id="receivingCustomerDetails" />
-                </div>
-            </div>
-
-            <div class="row" id="bankSection" style="display:none;">
-                <div class="col-md-3 mb-3" id="bankPaidSection">
-                    <label asp-for="BankCustomerPaidId" class="form-label">Bank Customer Paid</label>
-                    @Html.DropDownListFor(m => m.BankCustomerPaidId, ViewBag.Banks as SelectList, "Select Bank", new { @class = "form-select" })
-                </div>
-                <div class="col-md-3 mb-3" id="bankPaidDetailsSection">
-                    <label asp-for="BankCustomerPaidDetails" class="form-label">Bank Paid Details</label>
-                    <input asp-for="BankCustomerPaidDetails" class="form-control" />
-                </div>
-                <div class="col-md-3 mb-3" id="bankReceiverSection">
-                    <label asp-for="BankCustomerReceiverId" class="form-label">Bank Customer Receiver</label>
-                    @Html.DropDownListFor(m => m.BankCustomerReceiverId, ViewBag.Banks as SelectList, "Select Bank", new { @class = "form-select" })
-                </div>
-                <div class="col-md-3 mb-3" id="bankReceiverDetailsSection">
-                    <label asp-for="BankCustomerReceiverDetails" class="form-label">Bank Receiver Details</label>
-                    <input asp-for="BankCustomerReceiverDetails" class="form-control" />
-                </div>
-            </div>
-
-            <div class="row" id="itemSection">
-                <div class="col-md-3 mb-3">
-                    <label asp-for="ItemId" class="form-label">Item</label>
-                    @Html.DropDownListFor(m => m.ItemId, ViewBag.Items as SelectList, "Select Item", new { @class = "form-select", id = "itemSelect" })
-                </div>
-                <div class="col-md-2 mb-3">
-                    <label asp-for="Mon" class="form-label">Mon</label>
-                    <input asp-for="Mon" class="form-control" id="Mon" type="number" step="0.001" />
-                </div>
-                <div class="col-md-2 mb-3">
-                    <label asp-for="Weight" class="form-label">Weight</label>
-                    <input asp-for="Weight" type="number" step="0.001" class="form-control" id="weight" />
-                </div>
-                <div class="col-md-2 mb-3">
-                    <label asp-for="Kat" class="form-label">Kat</label>
-                    <input asp-for="Kat" type="number" step="0.001" class="form-control" id="kat" />
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label asp-for="Quantity" class="form-label">Quantity</label>
-                    <input asp-for="Quantity" type="number" step="0.001" class="form-control" id="quantity" />
-                </div>
-            </div>
-
-            <div class="row" id="expenseSection" style="display:none;">
-                <div class="col-md-4 mb-3">
-                    <label asp-for="ExpenseHeadId" class="form-label">Expense Head</label>
-                    @Html.DropDownListFor(m => m.ExpenseHeadId, ViewBag.ExpenseHeads as SelectList, "Select Expense Head", new { @class = "form-select", id = "expenseHead" })
-                </div>
-                <div class="col-md-2 mb-3">
-                    <label asp-for="ExpenseHeadRate" class="form-label">Expense Head Rate</label>
-                    <input asp-for="ExpenseHeadRate" type="number" step="0.01" class="form-control" id="expenseHeadRate" />
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="ExpenseHeadDetails" class="form-label">Expense Head Details</label>
-                    <input asp-for="ExpenseHeadDetails" class="form-control" />
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-2 mb-3" id="rateSection">
-                    <label asp-for="Rate" class="form-label">Rate</label>
-                    <input asp-for="Rate" type="number" step="0.01" class="form-control" id="rate" />
-                </div>
-                <div class="col-md-2 mb-3">
-                    <label asp-for="Amount" class="form-label">Amount</label>
-                    <input asp-for="Amount" type="number" step="0.01" class="form-control" id="amount" />
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label asp-for="GariNo" class="form-label">Gari No.</label>
-                    <input asp-for="GariNo" class="form-control" />
-                </div>
-                <div class="col-md-2 mb-3" id="stockIncludeSection">
-                    <label class="form-label">Stock Include</label>
-                    <input type="text" class="form-control" id="stockIncludeText" value="0" maxlength="1" />
-                    <input type="hidden" name="StockInclude" id="stockInclude" value="false" />
-                    <small class="text-muted">0=No, 1=Yes</small>
-                </div>
-            </div>
-
-            <div class="row">
+            <div class="row mt-2">
                 <div class="col-12">
-                    <button type="submit" class="btn btn-success">
-                        <i class="bi bi-check-circle"></i> Create Voucher
-                    </button>
-                    <a asp-action="Index" class="btn btn-secondary">
+                    <a asp-action="Index" class="btn btn-secondary btn-sm">
                         <i class="bi bi-arrow-left"></i> Back to List
                     </a>
                 </div>
@@ -421,15 +520,15 @@
             $('#cashType').on('change', function() {
                 var voucherType = '@Model.VoucherType';
                 if ($(this).val() == 'Bank') {
-                    $('#bankSection').show();
-                    // For Purchase voucher, hide Bank Receiver fields
+                    $('#bankColumn').show();
+                    // For Purchase voucher, hide Bank Receiver column
                     if (voucherType === 'Purchase') {
-                        $('#bankReceiverSection, #bankReceiverDetailsSection').hide();
+                        $('#bankReceiverColumn').hide();
                     } else {
-                        $('#bankReceiverSection, #bankReceiverDetailsSection').show();
+                        $('#bankReceiverColumn').show();
                     }
                 } else {
-                    $('#bankSection').hide();
+                    $('#bankColumn, #bankReceiverColumn').hide();
                 }
             });
 
@@ -536,52 +635,51 @@
         });
 
         function configureFormForVoucherType(type) {
-            // Reset all sections
-            $('#purchasingCustomerSection, #receivingCustomerSection, #bankSection, #itemSection, #expenseSection').hide();
-            $('#rateSection, #stockIncludeSection, #projectSection, #cashTypeSection').show();
-            $('.col-md-3.mb-3:has(label[for="GariNo"])').show();
+            // Reset all columns - hide all by default
+            $('#purchasingCustomerColumn, #receivingCustomerColumn, #bankColumn, #bankReceiverColumn').hide();
+            $('#itemColumn, #monWeightColumn, #katQuantityColumn, #expenseHeadColumn, #gariStockColumn').hide();
+
+            // Always show these by default
+            $('#projectCashTypeColumn, #rateAmountColumn').show();
+            $('#projectRow, #cashTypeRow, #rateRow').show();
 
             switch(type) {
                 case 'Purchase':
-                    $('#purchasingCustomerSection, #itemSection, #expenseSection').show();
-                    $('#stockIncludeSection').show();
+                    $('#purchasingCustomerColumn, #itemColumn, #monWeightColumn, #katQuantityColumn').show();
+                    $('#expenseHeadColumn, #gariStockColumn').show();
+                    $('#stockIncludeRow').show();
                     break;
                 case 'Sale':
-                    $('#receivingCustomerSection, #itemSection, #expenseSection').show();
-                    // $('#stockIncludeSection').hide();
+                    $('#receivingCustomerColumn, #itemColumn, #monWeightColumn, #katQuantityColumn').show();
+                    $('#expenseHeadColumn, #gariStockColumn').show();
+                    $('#stockIncludeRow').show();
                     break;
                 case 'Expense':
-                    $('#expenseSection').show();
-                    $('#rateSection, #stockIncludeSection').hide();
+                    $('#expenseHeadColumn').show();
+                    $('#rateRow').hide();
                     break;
                 case 'Hazri':
-                    $('#expenseSection, #itemSection').show();
-                    $('#cashTypeSection').hide();
-                    $('.col-md-2.mb-3:has(label[for="Mon"])').hide();
-                    $('.col-md-2.mb-3:has(label[for="Weight"])').hide();
-                    $('.col-md-2.mb-3:has(label[for="Kat"])').hide();
-                    $('.col-md-2.mb-3:has(label[for="ExpenseHeadRate"])').hide();
-                    $('#stockIncludeSection').hide();
+                    $('#expenseHeadColumn, #katQuantityColumn').show();
+                    $('#cashTypeRow').hide();
+                    $('#expenseRateRow').hide();
                     break;
                 case 'CashPaid':
-                    $('#purchasingCustomerSection').show();
-                    $('#rateSection, #stockIncludeSection, #projectSection').hide();
-                    $('.col-md-3.mb-3:has(label[for="GariNo"])').hide();
+                    $('#purchasingCustomerColumn').show();
+                    $('#projectRow').hide();
+                    $('#rateRow').hide();
                     break;
                 case 'CashReceived':
-                    $('#receivingCustomerSection').show();
-                    $('#rateSection, #stockIncludeSection').hide();
-                    $('.col-md-3.mb-3:has(label[for="GariNo"])').hide();
+                    $('#receivingCustomerColumn').show();
+                    $('#projectRow').hide();
+                    $('#rateRow').hide();
                     break;
                 case 'CCR':
-                    $('#purchasingCustomerSection, #receivingCustomerSection').show();
-                    $('#rateSection, #stockIncludeSection, #cashTypeSection, #projectSection').hide();
-                    $('.col-md-3.mb-3:has(label[for="GariNo"])').hide();
+                    $('#purchasingCustomerColumn, #receivingCustomerColumn').show();
+                    $('#projectRow, #cashTypeRow, #rateRow').hide();
                     break;
                 case 'BCR':
-                    $('#bankSection').show();
-                    $('#rateSection, #stockIncludeSection, #cashTypeSection, #projectSection').hide();
-                    $('.col-md-3.mb-3:has(label[for="GariNo"])').hide();
+                    $('#bankColumn, #bankReceiverColumn').show();
+                    $('#projectRow, #cashTypeRow, #rateRow').hide();
                     break;
             }
         }
