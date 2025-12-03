@@ -358,23 +358,23 @@
     </div>
 </div>
 
-<div class="card">
-    <div class="card-header">
+<div class="card shadow-sm">
+    <div class="card-header bg-dark text-white">
         <h5 class="mb-0"><i class="bi bi-list-ul"></i> Transaction Details</h5>
     </div>
-    <div class="card-body">
+    <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-striped table-sm" id="plReportTable">
-                <thead>
+            <table class="table table-hover table-bordered mb-0" id="plReportTable">
+                <thead class="table-primary">
                     <tr>
-                        <th>Date</th>
-                        <th>Transaction No</th>
-                        <th>Type</th>
-                        <th>Customer/Item</th>
-                        <th>Description</th>
-                        <th class="text-end">Debit (Expense)</th>
-                        <th class="text-end">Credit (Revenue)</th>
-                        <th class="text-end">Running Balance</th>
+                        <th class="fw-bold" style="font-size: 14px;">Date</th>
+                        <th class="fw-bold" style="font-size: 14px;">Transaction No</th>
+                        <th class="fw-bold" style="font-size: 14px;">Type</th>
+                        <th class="fw-bold" style="font-size: 14px;">Customer/Item</th>
+                        <th class="fw-bold" style="font-size: 14px;">Description</th>
+                        <th class="text-end fw-bold" style="font-size: 14px;">Debit (Expense)</th>
+                        <th class="text-end fw-bold" style="font-size: 14px;">Credit (Revenue)</th>
+                        <th class="text-end fw-bold" style="font-size: 14px;">Running Balance</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -396,17 +396,17 @@
                                 else if (isExpense)
                                     runningBalance -= voucher.Amount;
 
-                                <tr>
-                                    <td>@voucher.VoucherDate.ToString("dd-MMM-yy")</td>
-                                    <td>
+                                <tr style="font-size: 13px;">
+                                    <td class="align-middle">@voucher.VoucherDate.ToString("dd-MMM-yy")</td>
+                                    <td class="align-middle">
                                         <a asp-controller="Vouchers" asp-action="Details" asp-route-id="@voucher.Id">
                                             @voucher.TransactionNumber
                                         </a>
                                     </td>
-                                    <td>
-                                        <span class="badge bg-secondary">@voucher.VoucherType</span>
+                                    <td class="align-middle">
+                                        <span class="badge bg-secondary" style="font-size: 11px;">@voucher.VoucherType</span>
                                     </td>
-                                    <td>
+                                    <td class="align-middle">
                                         @(voucher.PurchasingCustomer?.Name ?? voucher.ReceivingCustomer?.Name ?? "-")
                                         @if (voucher.Item != null)
                                         {
@@ -415,37 +415,45 @@
                                             <small class="text-muted">@voucher.Item.Name</small>
                                         }
                                     </td>
-                                    <td>
+                                    <td class="align-middle">
                                         @(voucher.Item?.Name ?? voucher.ExpenseHead?.Name ??
                                         voucher.PurchasingCustomerDetails ?? voucher.ReceivingCustomerDetails ??
                                         "Cash Transaction")
                                     </td>
-                                    <td class="text-end">
+                                    <td class="text-end align-middle @(isExpense ? "text-danger fw-semibold" : "")">
                                         @if (isExpense)
                                         {
-                                            <span class="text-danger">@string.Format("{0:N0}", voucher.Amount)</span>
+                                            <span>@string.Format("{0:N0}", voucher.Amount)</span>
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
                                         }
                                     </td>
-                                    <td class="text-end">
+                                    <td class="text-end align-middle @(isRevenue ? "text-success fw-semibold" : "")">
                                         @if (isRevenue)
                                         {
-                                            <span class="text-success">@string.Format("{0:N0}", voucher.Amount)</span>
+                                            <span>@string.Format("{0:N0}", voucher.Amount)</span>
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
                                         }
                                     </td>
-                                    <td class="text-end fw-bold @(runningBalance >= 0 ? "text-success" : "text-danger")">
-                                        @string.Format("{0:N0}", runningBalance)
+                                    <td class="text-end align-middle fw-bold @(runningBalance >= 0 ? "text-success" : "text-danger")">
+                                        @string.Format("{0:N0}", Math.Abs(runningBalance))
                                     </td>
                                 </tr>
                             }
                         }
                     }
                 </tbody>
-                <tfoot>
-                    <tr class="table-dark">
-                        <th colspan="5">Total</th>
-                        <th class="text-end">@string.Format("{0:N0}", expenses)</th>
-                        <th class="text-end">@string.Format("{0:N0}", revenue)</th>
-                        <th class="text-end">@string.Format("{0:N0}", profitLoss)</th>
+                <tfoot class="table-success">
+                    <tr style="font-size: 15px;">
+                        <th colspan="5" class="fw-bold py-3">TOTAL:</th>
+                        <th class="text-end text-danger fw-bold py-3">Rs. @string.Format("{0:N0}", expenses)</th>
+                        <th class="text-end text-success fw-bold py-3">Rs. @string.Format("{0:N0}", revenue)</th>
+                        <th class="text-end fw-bold py-3 @(profitLoss >= 0 ? "text-success" : "text-danger")">Rs. @string.Format("{0:N0}", Math.Abs(profitLoss))</th>
                     </tr>
                 </tfoot>
             </table>
@@ -500,17 +508,65 @@
     </script>
 
     <style>
-
-            .card
-
-        {
-            page-break-inside: avoid;
+        /* Enhanced table styling */
+        #plReportTable thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #cfe2ff !important;
+            border-bottom: 2px solid #0d6efd;
+            padding: 12px 8px;
         }
 
-        .table {
-            font-size: 10pt;
+        #plReportTable tbody tr:hover {
+            background-color: #f8f9fa;
         }
 
-    
+        #plReportTable {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .table-responsive {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        /* Custom scrollbar */
+        .table-responsive::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        @@media print {
+            .card {
+                page-break-inside: avoid;
+            }
+
+            .table {
+                font-size: 10pt;
+            }
+
+            .table-responsive {
+                max-height: none;
+                overflow: visible;
+            }
+
+            #plReportTable thead th {
+                position: relative;
+            }
+        }
     </style>
 }

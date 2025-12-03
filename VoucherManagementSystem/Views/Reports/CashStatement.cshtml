@@ -119,23 +119,23 @@
 </div>
 
 <!-- Transaction History -->
-<div class="card">
-    <div class="card-header">
+<div class="card shadow-sm">
+    <div class="card-header bg-dark text-white">
         <h5 class="mb-0"><i class="bi bi-list-ul"></i> Cash Transactions</h5>
     </div>
-    <div class="card-body">
+    <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-striped table-sm" id="cashStatementTable">
-                <thead class="table-dark">
+            <table class="table table-hover table-bordered mb-0" id="cashStatementTable">
+                <thead class="table-primary">
                     <tr>
-                        <th>Date</th>
-                        <th>Transaction No</th>
-                        <th>Type</th>
-                        <th>Customer/Party</th>
-                        <th>Description</th>
-                        <th class="text-end">Receipt (In)</th>
-                        <th class="text-end">Payment (Out)</th>
-                        <th class="text-end">Balance</th>
+                        <th class="fw-bold" style="font-size: 14px;">Date</th>
+                        <th class="fw-bold" style="font-size: 14px;">Transaction No</th>
+                        <th class="fw-bold" style="font-size: 14px;">Type</th>
+                        <th class="fw-bold" style="font-size: 14px;">Customer/Party</th>
+                        <th class="fw-bold" style="font-size: 14px;">Description</th>
+                        <th class="text-end fw-bold" style="font-size: 14px;">Receipt (In)</th>
+                        <th class="text-end fw-bold" style="font-size: 14px;">Payment (Out)</th>
+                        <th class="text-end fw-bold" style="font-size: 14px;">Balance</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -220,15 +220,15 @@
                     }
 
                     <!-- Opening Balance Row -->
-                    <tr class="table-secondary">
-                        <td>@fromDate.ToString("dd-MMM-yy")</td>
+                    <tr class="table-warning">
+                        <td class="fw-semibold">@fromDate.ToString("dd-MMM-yy")</td>
                         <td>-</td>
-                        <td><span class="badge bg-secondary">Opening</span></td>
+                        <td><span class="badge bg-secondary" style="font-size: 11px;">Opening</span></td>
                         <td>-</td>
-                        <td><strong>Opening Balance</strong></td>
+                        <td class="fw-bold fs-6">Opening Balance</td>
                         <td class="text-end">-</td>
                         <td class="text-end">-</td>
-                        <td class="text-end fw-bold text-primary">@string.Format("{0:N0}", openingBalance)</td>
+                        <td class="text-end fw-bold text-success">@string.Format("{0:N0}", openingBalance)</td>
                     </tr>
 
                     @foreach (var trans in allTransactions)
@@ -237,9 +237,9 @@
                         totalReceipts += trans.Receipt;
                         totalPayments += trans.Payment;
 
-                        <tr>
-                            <td>@trans.Date.ToString("dd-MMM-yy")</td>
-                            <td>
+                        <tr style="font-size: 13px;">
+                            <td class="align-middle">@trans.Date.ToString("dd-MMM-yy")</td>
+                            <td class="align-middle">
                                 @if (trans.IsVoucher)
                                 {
                                     <a asp-controller="Vouchers" asp-action="Details" asp-route-id="@trans.Id">@trans.TransNo</a>
@@ -249,51 +249,53 @@
                                     @trans.TransNo
                                 }
                             </td>
-                            <td><span class="badge bg-@(trans.Receipt > 0 ? "success" : "danger")">@trans.Type</span></td>
-                            <td>@trans.Customer</td>
-                            <td>@trans.Desc</td>
-                            <td class="text-end">
+                            <td class="align-middle"><span class="badge bg-@(trans.Receipt > 0 ? "success" : "danger")" style="font-size: 11px;">@trans.Type</span></td>
+                            <td class="align-middle">@trans.Customer</td>
+                            <td class="align-middle">@trans.Desc</td>
+                            <td class="text-end align-middle @(trans.Receipt > 0 ? "text-success fw-semibold" : "")">
                                 @if (trans.Receipt > 0)
                                 {
-                                    <span class="text-success">@string.Format("{0:N0}", trans.Receipt)</span>
+                                    <span>@string.Format("{0:N0}", trans.Receipt)</span>
                                 }
                                 else
                                 {
                                     <text>-</text>
                                 }
                             </td>
-                            <td class="text-end">
+                            <td class="text-end align-middle @(trans.Payment > 0 ? "text-danger fw-semibold" : "")">
                                 @if (trans.Payment > 0)
                                 {
-                                    <span class="text-danger">@string.Format("{0:N0}", trans.Payment)</span>
+                                    <span>@string.Format("{0:N0}", trans.Payment)</span>
                                 }
                                 else
                                 {
                                     <text>-</text>
                                 }
                             </td>
-                            <td class="text-end fw-bold @(runningBalance >= 0 ? "text-primary" : "text-danger")">@string.Format("{0:N0}", runningBalance)</td>
+                            <td class="text-end align-middle fw-bold @(runningBalance >= 0 ? "text-success" : "text-danger")">@string.Format("{0:N0}", Math.Abs(runningBalance))</td>
                         </tr>
                     }
 
                     @if (!allTransactions.Any())
                     {
                         <tr>
-                            <td colspan="8" class="text-center">No cash transactions found for the selected period.</td>
+                            <td colspan="8" class="text-center text-muted py-4 fst-italic">
+                                <i class="bi bi-info-circle"></i> No cash transactions found for the selected period.
+                            </td>
                         </tr>
                     }
                 </tbody>
-                <tfoot class="table-dark">
-                    <tr>
-                        <th colspan="5" class="text-end">Period Total:</th>
-                        <th class="text-end">Rs. @string.Format("{0:N0}", totalReceipts)</th>
-                        <th class="text-end">Rs. @string.Format("{0:N0}", totalPayments)</th>
+                <tfoot class="table-success">
+                    <tr style="font-size: 15px;">
+                        <th colspan="5" class="fw-bold py-3 text-end">PERIOD TOTAL:</th>
+                        <th class="text-end text-success fw-bold py-3">Rs. @string.Format("{0:N0}", totalReceipts)</th>
+                        <th class="text-end text-danger fw-bold py-3">Rs. @string.Format("{0:N0}", totalPayments)</th>
                         <th class="text-end"></th>
                     </tr>
-                    <tr>
-                        <th colspan="5" class="text-end">Closing Balance (as of @toDate.ToString("dd-MMM-yyyy")):</th>
+                    <tr style="font-size: 15px;">
+                        <th colspan="5" class="fw-bold py-3 text-end">CLOSING BALANCE (as of @toDate.ToString("dd-MMM-yyyy")):</th>
                         <th colspan="2" class="text-end"></th>
-                        <th class="text-end">Rs. @string.Format("{0:N0}", openingBalance + totalReceipts - totalPayments)</th>
+                        <th class="text-end fw-bold py-3 text-success">Rs. @string.Format("{0:N0}", openingBalance + totalReceipts - totalPayments)</th>
                     </tr>
                 </tfoot>
             </table>
@@ -339,9 +341,60 @@
     </script>
 
     <style>
+        /* Enhanced table styling */
+        #cashStatementTable thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #cfe2ff !important;
+            border-bottom: 2px solid #0d6efd;
+            padding: 12px 8px;
+        }
+
+        #cashStatementTable tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        #cashStatementTable {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .table-responsive {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        /* Custom scrollbar */
+        .table-responsive::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
         @@media print {
             .card { page-break-inside: avoid; }
             .table { font-size: 9pt; }
+
+            .table-responsive {
+                max-height: none;
+                overflow: visible;
+            }
+
+            #cashStatementTable thead th {
+                position: relative;
+            }
         }
     </style>
 }

@@ -56,22 +56,22 @@
     </div>
 </div>
 
-<div class="card">
-    <div class="card-header">
+<div class="card shadow-sm">
+    <div class="card-header bg-dark text-white">
         <h5 class="mb-0"><i class="bi bi-list-ul"></i> Transaction History</h5>
     </div>
-    <div class="card-body">
+    <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-striped table-sm" id="bankStatementTable">
-                <thead>
+            <table class="table table-hover table-bordered mb-0" id="bankStatementTable">
+                <thead class="table-primary">
                     <tr>
-                        <th>Date</th>
-                        <th>Transaction No</th>
-                        <th>Type</th>
-                        <th>Description</th>
-                        <th class="text-end">Debit (Withdrawal)</th>
-                        <th class="text-end">Credit (Deposit)</th>
-                        <th class="text-end">Balance</th>
+                        <th class="fw-bold" style="font-size: 14px;">Date</th>
+                        <th class="fw-bold" style="font-size: 14px;">Transaction No</th>
+                        <th class="fw-bold" style="font-size: 14px;">Type</th>
+                        <th class="fw-bold" style="font-size: 14px;">Description</th>
+                        <th class="text-end fw-bold" style="font-size: 14px;">Debit (Withdrawal)</th>
+                        <th class="text-end fw-bold" style="font-size: 14px;">Credit (Deposit)</th>
+                        <th class="text-end fw-bold" style="font-size: 14px;">Balance</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -83,12 +83,12 @@
                     }
 
                     <!-- Opening Balance Row -->
-                    <tr class="table-secondary">
-                        <td>@fromDate.ToString("dd-MMM-yy")</td>
-                        <td colspan="3"><strong>Opening Balance</strong></td>
-                        <td class="text-end">@(openingBalance < 0 ? string.Format("{0:N0}", Math.Abs(openingBalance)) : "-")</td>
-                        <td class="text-end">@(openingBalance > 0 ? string.Format("{0:N0}", openingBalance) : "-")</td>
-                        <td class="text-end fw-bold @(openingBalance >= 0 ? "text-primary" : "text-danger")">
+                    <tr class="table-warning">
+                        <td class="fw-semibold">@fromDate.ToString("dd-MMM-yy")</td>
+                        <td colspan="3" class="fw-bold fs-6">Opening Balance</td>
+                        <td class="text-end fw-semibold">@(openingBalance < 0 ? string.Format("{0:N0}", Math.Abs(openingBalance)) : "-")</td>
+                        <td class="text-end fw-semibold">@(openingBalance > 0 ? string.Format("{0:N0}", openingBalance) : "-")</td>
+                        <td class="text-end fw-bold @(openingBalance >= 0 ? "text-success" : "text-danger")">
                             @string.Format("{0:N0}", Math.Abs(openingBalance))
                         </td>
                     </tr>
@@ -111,44 +111,44 @@
                                 totalCredit += transaction.Amount;
                             }
 
-                            <tr>
-                                <td>@transaction.VoucherDate.ToString("dd-MMM-yy")</td>
-                                <td>
+                            <tr style="font-size: 13px;">
+                                <td class="align-middle">@transaction.VoucherDate.ToString("dd-MMM-yy")</td>
+                                <td class="align-middle">
                                     <a asp-controller="Vouchers" asp-action="Details" asp-route-id="@transaction.Id">
                                         @transaction.TransactionNumber
                                     </a>
                                 </td>
-                                <td>
-                                    <span class="badge bg-@(transaction.VoucherType == VoucherManagementSystem.Models.VoucherType.BCR ? "info" : "secondary")">
+                                <td class="align-middle">
+                                    <span class="badge bg-@(transaction.VoucherType == VoucherManagementSystem.Models.VoucherType.BCR ? "info" : "secondary")" style="font-size: 11px;">
                                         @transaction.VoucherType
                                     </span>
                                 </td>
-                                <td>
+                                <td class="align-middle">
                                     @(transaction.BankCustomerPaidDetails ?? transaction.BankCustomerReceiverDetails ??
                                     transaction.PurchasingCustomerDetails ?? transaction.ReceivingCustomerDetails ??
                                     "Bank Transaction")
                                 </td>
-                                <td class="text-end">
+                                <td class="text-end align-middle @(isDebit ? "text-danger fw-semibold" : "")">
                                     @if (isDebit)
                                     {
-                                        <span class="text-danger">@string.Format("{0:N0}", transaction.Amount)</span>
+                                        <span>@string.Format("{0:N0}", transaction.Amount)</span>
                                     }
                                     else
                                     {
                                         <span>-</span>
                                     }
                                 </td>
-                                <td class="text-end">
+                                <td class="text-end align-middle @(isCredit ? "text-success fw-semibold" : "")">
                                     @if (isCredit)
                                     {
-                                        <span class="text-success">@string.Format("{0:N0}", transaction.Amount)</span>
+                                        <span>@string.Format("{0:N0}", transaction.Amount)</span>
                                     }
                                     else
                                     {
                                         <span>-</span>
                                     }
                                 </td>
-                                <td class="text-end fw-bold @(runningBalance >= 0 ? "text-primary" : "text-danger")">
+                                <td class="text-end align-middle fw-bold @(runningBalance >= 0 ? "text-success" : "text-danger")">
                                     @string.Format("{0:N0}", Math.Abs(runningBalance))
                                 </td>
                             </tr>
@@ -157,30 +157,32 @@
                     else
                     {
                         <tr>
-                            <td colspan="7" class="text-center">No transactions found for the selected period.</td>
+                            <td colspan="7" class="text-center text-muted py-4 fst-italic">
+                                <i class="bi bi-info-circle"></i> No transactions found for the selected period.
+                            </td>
                         </tr>
                     }
                 </tbody>
-                <tfoot>
-                    <tr class="table-dark">
-                        <th colspan="4">Period Total (Debit/Credit)</th>
-                        <th class="text-end">@string.Format("{0:N0}", totalDebit)</th>
-                        <th class="text-end">@string.Format("{0:N0}", totalCredit)</th>
+                <tfoot class="table-success">
+                    <tr style="font-size: 15px;">
+                        <th colspan="4" class="fw-bold py-3">PERIOD TOTAL:</th>
+                        <th class="text-end text-danger fw-bold py-3">Rs. @string.Format("{0:N0}", totalDebit)</th>
+                        <th class="text-end text-success fw-bold py-3">Rs. @string.Format("{0:N0}", totalCredit)</th>
                         <th class="text-end"></th>
                     </tr>
-                    <tr class="table-dark">
-                        <th colspan="4">Closing Balance (as of @toDate.ToString("dd-MMM-yyyy"))</th>
+                    <tr style="font-size: 15px;">
+                        <th colspan="4" class="fw-bold py-3">CLOSING BALANCE (as of @toDate.ToString("dd-MMM-yyyy")):</th>
                         <th colspan="2" class="text-end">
                             @{
                                 decimal closingBalance = openingBalance + totalCredit - totalDebit;
                             }
                         </th>
-                        <th class="text-end">@string.Format("{0:N0}", Math.Abs(closingBalance))</th>
+                        <th class="text-end fw-bold py-3 @(closingBalance >= 0 ? "text-success" : "text-danger")">Rs. @string.Format("{0:N0}", Math.Abs(closingBalance))</th>
                     </tr>
-                    <tr class="table-info">
-                        <th colspan="4">Current Bank Balance</th>
+                    <tr class="table-info" style="font-size: 15px;">
+                        <th colspan="4" class="fw-bold py-3">CURRENT BANK BALANCE:</th>
                         <th colspan="2" class="text-end"></th>
-                        <th class="text-end">@string.Format("{0:N0}", Math.Abs(bank?.Balance ?? 0))</th>
+                        <th class="text-end fw-bold py-3 text-primary">Rs. @string.Format("{0:N0}", Math.Abs(bank?.Balance ?? 0))</th>
                     </tr>
                 </tfoot>
             </table>
@@ -233,17 +235,65 @@
     </script>
 
     <style>
-        
-            .card
-
-        {
-            page-break-inside: avoid;
+        /* Enhanced table styling */
+        #bankStatementTable thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #cfe2ff !important;
+            border-bottom: 2px solid #0d6efd;
+            padding: 12px 8px;
         }
 
-        .table {
-            font-size: 10pt;
+        #bankStatementTable tbody tr:hover {
+            background-color: #f8f9fa;
         }
 
-        
+        #bankStatementTable {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .table-responsive {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        /* Custom scrollbar */
+        .table-responsive::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        @@media print {
+            .card {
+                page-break-inside: avoid;
+            }
+
+            .table {
+                font-size: 10pt;
+            }
+
+            .table-responsive {
+                max-height: none;
+                overflow: visible;
+            }
+
+            #bankStatementTable thead th {
+                position: relative;
+            }
+        }
     </style>
 }
