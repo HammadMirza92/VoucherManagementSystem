@@ -18,6 +18,7 @@ namespace VoucherManagementSystem.Controllers
         private readonly IExpenseHeadRepository _expenseHeadRepository;
         private readonly ICustomerRepository _customerRepository;
         private readonly ILogger<ReportsController> _logger;
+        private readonly IWebHostEnvironment _environment;
 
         public ReportsController(
             ApplicationDbContext context,
@@ -27,7 +28,8 @@ namespace VoucherManagementSystem.Controllers
             IItemRepository itemRepository,
             IExpenseHeadRepository expenseHeadRepository,
             ICustomerRepository customerRepository,
-            ILogger<ReportsController> logger)
+            ILogger<ReportsController> logger,
+            IWebHostEnvironment environment)
         {
             _context = context;
             _voucherRepository = voucherRepository;
@@ -37,6 +39,7 @@ namespace VoucherManagementSystem.Controllers
             _expenseHeadRepository = expenseHeadRepository;
             _customerRepository = customerRepository;
             _logger = logger;
+            _environment = environment;
         }
 
         // GET: Reports
@@ -1345,6 +1348,137 @@ namespace VoucherManagementSystem.Controllers
                 TempData["Error"] = "Error generating projects report.";
                 return RedirectToAction(nameof(Index));
             }
+        }
+
+        // GET: Reports/OpenWhatsAppFolder
+        [HttpGet]
+        public IActionResult OpenWhatsAppFolder()
+        {
+            try
+            {
+                string whatsAppFolder = Path.Combine(_environment.ContentRootPath, "WhatsAppData");
+
+                if (Directory.Exists(whatsAppFolder))
+                {
+                    // Open file explorer at the WhatsAppData folder
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = whatsAppFolder,
+                        UseShellExecute = true,
+                        Verb = "open"
+                    });
+
+                    return Json(new { success = true, message = "Folder opened successfully" });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "WhatsAppData folder not found" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error opening WhatsApp folder");
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+        // POST: Reports/SendCustomerLedgerToWhatsApp
+        [HttpPost]
+        public async Task<IActionResult> SendCustomerLedgerToWhatsApp(IFormFile pdfFile, int customerId, DateTime fromDate, DateTime toDate, decimal closingBalance, string balanceType)
+        {
+            try
+            {
+                if (pdfFile == null || pdfFile.Length == 0)
+                {
+                    return Json(new { success = false, message = "PDF file is required" });
+                }
+
+                var customer = await _customerRepository.GetByIdAsync(customerId);
+                if (customer == null)
+                {
+                    return Json(new { success = false, message = "Customer not found" });
+                }
+
+                // 1. Create WhatsAppData folder if it doesn't exist
+                string whatsAppFolder = Path.Combine(_environment.ContentRootPath, "WhatsAppData");
+                Directory.CreateDirectory(whatsAppFolder);
+
+                // 2. Create timestamped filename
+                string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                string safeFileName = $"{timestamp}_CustomerLedger_{customer.Name.Replace(" ", "_")}.pdf";
+                string filePath = Path.Combine(whatsAppFolder, safeFileName);
+
+                // 3. Save PDF file
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await pdfFile.CopyToAsync(stream);
+                }
+
+                _logger.LogInformation($"PDF saved to: {filePath}");
+
+                // 4. Prepare WhatsApp message
+                string message = $"*Customer Ledger Report*\n" +
+                                $"━━━━━━━━━━━━━━━━━━━━\n" +
+                                $"📋 Customer: {customer.Name}\n" +
+                                $"📅 Period: {fromDate:dd-MMM-yyyy} to {toDate:dd-MMM-yyyy}\n" +
+                                $"💰 Closing Balance: Rs. {closingBalance:N0} {balanceType}\n\n" +
+                                $"Please find the attached ledger report PDF.";
+
+                // 5. Format phone number
+                string phoneNumber = FormatPhoneNumber(customer.Phone);
+
+                // 6. Build WhatsApp Web URL
+                string whatsappUrl;
+                if (!string.IsNullOrEmpty(phoneNumber))
+                {
+                    whatsappUrl = $"https://web.whatsapp.com/send?phone={phoneNumber}&text={Uri.EscapeDataString(message)}";
+                }
+                else
+                {
+                    whatsappUrl = $"https://web.whatsapp.com/send?text={Uri.EscapeDataString(message)}";
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    whatsappUrl = whatsappUrl,
+                    filePath = filePath,
+                    fileName = safeFileName,
+                    message = "PDF saved successfully! WhatsApp Web will open shortly."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in SendCustomerLedgerToWhatsApp");
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+        /// <summary>
+        /// Formats phone number for WhatsApp (adds country code if needed)
+        /// </summary>
+        private string FormatPhoneNumber(string? phone)
+        {
+            if (string.IsNullOrWhiteSpace(phone))
+                return string.Empty;
+
+            // Remove all non-digit characters
+            string phoneNumber = new string(phone.Where(char.IsDigit).ToArray());
+
+            // If phone doesn't start with country code, add Pakistan code (+92)
+            if (!phoneNumber.StartsWith("92"))
+            {
+                if (phoneNumber.StartsWith("0"))
+                {
+                    phoneNumber = "92" + phoneNumber.Substring(1);
+                }
+                else
+                {
+                    phoneNumber = "92" + phoneNumber;
+                }
+            }
+
+            return phoneNumber;
         }
 
         // GET: Reports/AllCustomersReport - Customers receivables and payables
