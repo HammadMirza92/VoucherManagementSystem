@@ -4,6 +4,25 @@
     var voucherList = ViewBag.VoucherList as List<VoucherManagementSystem.Models.Voucher>;
 }
 
+@section Styles {
+    <style>
+        /* Label styling for voucher forms */
+        #voucherForm label,
+        #voucherForm .form-label {
+            background-color: #9b0000;
+            color: white;
+            padding: 8px;
+            border-radius: 3px;
+            display: block;
+            margin-bottom: 2px;
+            font-weight: normal;
+            text-align: center;
+            width: 100%;
+            font-size: calc(1rem + 2px);
+        }
+    </style>
+}
+
 <h2><i class="bi bi-plus-circle"></i> General Voucher Creation</h2>
 
 @if (TempData["Success"] != null)
