@@ -117,13 +117,35 @@ namespace VoucherManagementSystem.Controllers
         }
 
         // GET: Vouchers/Create
-        public async Task<IActionResult> Create(VoucherType? type)
+        public async Task<IActionResult> Create(VoucherType? type, int page = 1, int pageSize = 10)
         {
             var voucher = new Voucher
             {
                 VoucherType = type ?? VoucherType.Purchase,
                 VoucherDate = DateTime.Now
             };
+
+            // Get recent vouchers filtered by type
+            var voucherType = type ?? VoucherType.Purchase;
+            var allVouchers = await _voucherRepository.GetVouchersWithDetailsAsync();
+            var filteredVouchers = allVouchers
+                .Where(v => v.VoucherType == voucherType)
+                .OrderByDescending(v => v.CreatedDate)
+                .ToList();
+
+            // Calculate pagination
+            var totalRecords = filteredVouchers.Count;
+            var totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
+            var voucherList = filteredVouchers
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            ViewBag.VoucherList = voucherList;
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalRecords = totalRecords;
+            ViewBag.PageSize = pageSize;
 
             await PrepareViewBags();
             return View(voucher);
@@ -183,7 +205,7 @@ namespace VoucherManagementSystem.Controllers
 
                 await _voucherRepository.AddAsync(voucher);
                 TempData["Success"] = "Voucher created successfully!";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Create), new { type = voucher.VoucherType });
             }
             catch (Exception ex)
             {

@@ -2,11 +2,118 @@
 @model VoucherManagementSystem.Models.Voucher
 @{
     ViewData["Title"] = "Create Voucher";
+    var voucherList = ViewBag.VoucherList as List<VoucherManagementSystem.Models.Voucher>;
 }
 
 <h2><i class="bi bi-plus-circle"></i> Create New @Model.VoucherType Voucher</h2>
 
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Voucher List Section -->
+<div class="card mb-3">
+    <div class="card-header">
+        <h5>Recent @Model.VoucherType Vouchers (Total: @ViewBag.TotalRecords)</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th>Transaction No</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Item</th>
+                        <th>Project</th>
+                        <th>Quantity</th>
+                        <th>Rate</th>
+                        <th>Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (voucherList != null && voucherList.Any())
+                    {
+                        @foreach (var item in voucherList)
+                        {
+                            <tr>
+                                <td>@item.TransactionNumber</td>
+                                <td>@item.VoucherDate.ToString("dd-MMM-yyyy")</td>
+                                <td>
+                                    @{
+                                        var customerName = item.PurchasingCustomer?.Name ?? item.ReceivingCustomer?.Name;
+                                    }
+                                    @customerName
+                                </td>
+                                <td>@item.Item?.Name</td>
+                                <td>@item.Project?.Name</td>
+                                <td class="text-end">@(item.Quantity.HasValue ? string.Format("{0:N3}", item.Quantity.Value) : "-")</td>
+                                <td class="text-end">@(item.Rate.HasValue ? string.Format("{0:N2}", item.Rate.Value) : "-")</td>
+                                <td class="text-end">@string.Format("{0:N0}", item.Amount)</td>
+                                <td>
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info" title="Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center">No vouchers found for this type.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        @if (ViewBag.TotalPages > 1)
+        {
+            <nav aria-label="Voucher pagination">
+                <ul class="pagination pagination-sm justify-content-center mb-0">
+                    <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="Create" asp-route-type="@Model.VoucherType" asp-route-page="@(ViewBag.CurrentPage - 1)">Previous</a>
+                    </li>
+
+                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    {
+                        <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
+                            <a class="page-link" asp-action="Create" asp-route-type="@Model.VoucherType" asp-route-page="@i">@i</a>
+                        </li>
+                    }
+
+                    <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                        <a class="page-link" asp-action="Create" asp-route-type="@Model.VoucherType" asp-route-page="@(ViewBag.CurrentPage + 1)">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>
+
+<!-- Create Form Section -->
 <div class="card">
+    <div class="card-header">
+        <h5>Add New @Model.VoucherType Voucher</h5>
+    </div>
     <div class="card-body">
         <form asp-action="Create" id="voucherForm">
             <input type="hidden" asp-for="VoucherType" />
