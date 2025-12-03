@@ -393,13 +393,37 @@
                 width: '100%'
             });
 
-            // Arrow key navigation between form fields
-            var formInputs = 'input:not([readonly]):visible, select:visible, textarea:visible';
+            // Arrow and Enter key navigation between form fields
+            var formInputs = 'input:not([readonly]):visible, select:visible, textarea:visible, button[type="submit"]:visible';
 
             $(document).on('keydown', formInputs, function(e) {
                 // Get all visible and enabled form inputs
                 var $allInputs = $(formInputs).not(':disabled');
                 var currentIndex = $allInputs.index(this);
+
+                // Enter key - Move to next field (except on submit button)
+                if (e.keyCode === 13) {
+                    // If current element is submit button, allow default submit behavior
+                    if ($(this).is('button[type="submit"]')) {
+                        return true;
+                    }
+
+                    // Prevent form submission
+                    e.preventDefault();
+
+                    // Move to next field
+                    if (currentIndex < $allInputs.length - 1) {
+                        var $nextInput = $allInputs.eq(currentIndex + 1);
+                        // If next input is a Select2, open it
+                        if ($nextInput.hasClass('select2-hidden-accessible')) {
+                            $nextInput.select2('open');
+                        } else if ($nextInput.is('button[type="submit"]')) {
+                            $nextInput.focus();
+                        } else {
+                            $nextInput.focus().select();
+                        }
+                    }
+                }
 
                 // Arrow Right - Move to next field
                 if (e.keyCode === 39) {
@@ -409,6 +433,8 @@
                         // If next input is a Select2, open it
                         if ($nextInput.hasClass('select2-hidden-accessible')) {
                             $nextInput.select2('open');
+                        } else if ($nextInput.is('button[type="submit"]')) {
+                            $nextInput.focus();
                         } else {
                             $nextInput.focus().select();
                         }
@@ -423,6 +449,8 @@
                         // If previous input is a Select2, open it
                         if ($prevInput.hasClass('select2-hidden-accessible')) {
                             $prevInput.select2('open');
+                        } else if ($prevInput.is('button[type="submit"]')) {
+                            $prevInput.focus();
                         } else {
                             $prevInput.focus().select();
                         }
@@ -460,8 +488,33 @@
                 }
             });
 
-            // Arrow key navigation for Select2 search boxes
+            // Enter and Arrow key navigation for Select2 search boxes
             $(document).on('keydown', '.select2-search__field', function(e) {
+                // Enter key - Close dropdown and move to next field (if item is selected)
+                if (e.keyCode === 13) {
+                    var $container = $(this).closest('.select2-container');
+                    var $select = $($container.prev('select.select2-hidden-accessible'));
+
+                    // Small delay to let Select2 process the selection
+                    setTimeout(function() {
+                        $select.select2('close');
+
+                        var $allInputs = $(formInputs).not(':disabled');
+                        var currentIndex = $allInputs.index($select[0]);
+
+                        if (currentIndex < $allInputs.length - 1) {
+                            var $nextInput = $allInputs.eq(currentIndex + 1);
+                            if ($nextInput.hasClass('select2-hidden-accessible')) {
+                                $nextInput.select2('open');
+                            } else if ($nextInput.is('button[type="submit"]')) {
+                                $nextInput.focus();
+                            } else {
+                                $nextInput.focus().select();
+                            }
+                        }
+                    }, 50);
+                }
+
                 // Arrow Right - Close dropdown and move to next field
                 if (e.keyCode === 39) {
                     e.preventDefault();
@@ -482,6 +535,8 @@
                         var $nextInput = $allInputs.eq(currentIndex + 1);
                         if ($nextInput.hasClass('select2-hidden-accessible')) {
                             $nextInput.select2('open');
+                        } else if ($nextInput.is('button[type="submit"]')) {
+                            $nextInput.focus();
                         } else {
                             $nextInput.focus().select();
                         }
@@ -508,6 +563,8 @@
                         var $prevInput = $allInputs.eq(currentIndex - 1);
                         if ($prevInput.hasClass('select2-hidden-accessible')) {
                             $prevInput.select2('open');
+                        } else if ($prevInput.is('button[type="submit"]')) {
+                            $prevInput.focus();
                         } else {
                             $prevInput.focus().select();
                         }

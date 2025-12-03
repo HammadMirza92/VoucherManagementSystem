@@ -238,6 +238,14 @@ namespace VoucherManagementSystem.Controllers
 
                 await _voucherRepository.AddAsync(voucher);
                 TempData["Success"] = "Voucher created successfully!";
+
+                // Check if request is from GeneralCreate page
+                var referer = Request.Headers["Referer"].ToString();
+                if (referer.Contains("/GeneralCreate", StringComparison.OrdinalIgnoreCase))
+                {
+                    return RedirectToAction(nameof(GeneralCreate));
+                }
+
                 return RedirectToAction(nameof(Create), new { type = voucher.VoucherType });
             }
             catch (Exception ex)
@@ -246,6 +254,14 @@ namespace VoucherManagementSystem.Controllers
             }
 
             await PrepareViewBags();
+
+            // Check if request is from GeneralCreate page for error handling
+            var errorReferer = Request.Headers["Referer"].ToString();
+            if (errorReferer.Contains("/GeneralCreate", StringComparison.OrdinalIgnoreCase))
+            {
+                return View("GeneralCreate", voucher);
+            }
+
             return View(voucher);
         }
 
