@@ -378,6 +378,20 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
+            // Auto-scroll to form after page load (when redirected after save)
+            @if (TempData["Success"] != null)
+            {
+                <text>
+                setTimeout(function() {
+                    $('html, body').animate({
+                        scrollTop: $('#voucherForm').offset().top - 100
+                    }, 500);
+                    // Focus on first field (Voucher Type)
+                    $('#voucherTypeSelect').focus();
+                }, 300);
+                </text>
+            }
+
             // Initialize Select2 for customer dropdowns with search functionality
             $('#purchasingCustomer, #receivingCustomer').select2({
                 theme: 'bootstrap-5',
