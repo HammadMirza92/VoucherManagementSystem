@@ -21,6 +21,7 @@ namespace VoucherManagementSystem.Data
         public DbSet<CashAdjustment> CashAdjustments { get; set; }
         public DbSet<PageLock> PageLocks { get; set; }
         public DbSet<MasterPassword> MasterPasswords { get; set; }
+        public DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -142,6 +143,11 @@ namespace VoucherManagementSystem.Data
                 .WithMany(i => i.CustomerItemRates)
                 .HasForeignKey(cir => cir.ItemId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // User configurations
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Username)
+                .IsUnique();
         }
     }
 }

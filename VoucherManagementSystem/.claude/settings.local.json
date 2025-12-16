@@ -4,7 +4,8 @@
       "Bash(dotnet ef migrations:*)",
       "Bash(dotnet build)",
       "Bash(dir:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(dotnet ef database:*)"
     ],
     "deny": [],
     "ask": []

@@ -259,15 +259,24 @@ namespace VoucherManagementSystem.Controllers
         }
 
         [HttpPost]
-        public IActionResult DoLogin(string username, string password)
+        public async Task<IActionResult> DoLogin(string username, string password)
         {
-            var adminUsername = _configuration["AdminCredentials:Username"];
-            var adminPassword = _configuration["AdminCredentials:Password"];
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == username && u.Password == password && u.IsActive);
 
-            if (username == adminUsername && password == adminPassword)
+            if (user != null)
             {
+                // Update last login date
+                user.LastLoginDate = DateTime.Now;
+                await _context.SaveChangesAsync();
+
+                // Set session variables
                 HttpContext.Session.SetString("IsLoggedIn", "true");
-                HttpContext.Session.SetString("Username", username);
+                HttpContext.Session.SetString("Username", user.Username);
+                HttpContext.Session.SetString("UserId", user.Id.ToString());
+                HttpContext.Session.SetString("UserRole", user.Role);
+                HttpContext.Session.SetString("FullName", user.FullName);
+
                 return Json(new { success = true });
             }
 

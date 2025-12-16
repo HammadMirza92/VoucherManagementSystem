@@ -14,6 +14,24 @@ namespace VoucherManagementSystem.Data
             // Ensure database is created
             context.Database.EnsureCreated();
 
+            // Seed default admin user if no users exist
+            if (!context.Users.Any())
+            {
+                var adminUser = new User
+                {
+                    Username = "admin",
+                    Password = "admin123",
+                    FullName = "System Administrator",
+                    Email = "admin@system.com",
+                    Role = "Admin",
+                    IsActive = true,
+                    CreatedDate = DateTime.Now,
+                    CreatedBy = "system"
+                };
+                context.Users.Add(adminUser);
+                context.SaveChanges();
+            }
+
             // Check if data already exists
             if (context.Customers.Any())
             {
