@@ -2,11 +2,15 @@ using Microsoft.EntityFrameworkCore;
 using VoucherManagementSystem.Data;
 using VoucherManagementSystem.Interfaces;
 using VoucherManagementSystem.Repositories;
+using VoucherManagementSystem.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews()
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<PageLockFilter>();
+})
     .AddRazorRuntimeCompilation();
 
 // Configure Entity Framework
@@ -21,6 +25,9 @@ builder.Services.AddScoped<IItemRepository, ItemRepository>();
 builder.Services.AddScoped<IBankRepository, BankRepository>();
 builder.Services.AddScoped<IExpenseHeadRepository, ExpenseHeadRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+
+// Register PageLockFilter with DbContext dependency
+builder.Services.AddScoped<PageLockFilter>();
 
 // Add Session support for authentication
 builder.Services.AddDistributedMemoryCache();
@@ -56,9 +63,12 @@ app.Use(async (context, next) =>
     var path = context.Request.Path.Value?.ToLower();
     var isLoggedIn = context.Session.GetString("IsLoggedIn") == "true";
 
-    // Allow access to login page and static files
+    // Allow access to login page, PageLock pages, and static files
     if (path == "/home/login" ||
         path == "/home/dologin" ||
+        path == "/pagelock/verifymasterpassword" ||
+        path == "/pagelock/masterlockauth" ||
+        path == "/pagelock/verifypassword" ||
         path?.StartsWith("/lib") == true ||
         path?.StartsWith("/css") == true ||
         path?.StartsWith("/js") == true)

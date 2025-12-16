@@ -19,6 +19,8 @@ namespace VoucherManagementSystem.Data
         public DbSet<Project> Projects { get; set; }
         public DbSet<CustomerItemRate> CustomerItemRates { get; set; }
         public DbSet<CashAdjustment> CashAdjustments { get; set; }
+        public DbSet<PageLock> PageLocks { get; set; }
+        public DbSet<MasterPassword> MasterPasswords { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -56,6 +56,11 @@
                                 <i class="bi bi-graph-up"></i> Reports
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-light" asp-controller="PageLock" asp-action="MasterLock">
+                                <i class="bi bi-shield-lock"></i> Master Lock
+                            </a>
+                        </li>
                     </ul>
                     <ul class="navbar-nav">
                         <li class="nav-item">
@@ -93,6 +98,8 @@
             @RenderBody()
         </main>
     </div>
+
+    @await Html.PartialAsync("_PageLockModal")
 
     <footer class="border-top footer text-muted">
         <div class="container">
