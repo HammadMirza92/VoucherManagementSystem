@@ -226,10 +226,17 @@ namespace VoucherManagementSystem.Controllers
             }
             ViewBag.MonthlyData = monthlyData;
 
-            // 7. Total Capital
-            ViewBag.TotalCapital = totalStockValue + totalReceivables + cashInHand + totalBankBalance - totalPayables;
+            // 7. Total Expenses (all time)
+            var allExpenseVouchers = await _context.Vouchers
+                .Where(v => v.VoucherType == VoucherType.Expense || v.VoucherType == VoucherType.Hazri)
+                .ToListAsync();
+            decimal totalExpenses = allExpenseVouchers.Sum(v => v.Amount);
+            ViewBag.TotalExpenses = totalExpenses;
 
-            // 8. Voucher Type Distribution (Last 30 days)
+            // 8. Total Capital
+            ViewBag.TotalCapital = totalStockValue + totalReceivables + cashInHand + totalBankBalance - totalPayables - totalExpenses;
+
+            // 9. Voucher Type Distribution (Last 30 days)
             var voucherTypeData = todayVouchers
                 .Concat(await _context.Vouchers.Where(v => v.VoucherDate >= last30Days).ToListAsync())
                 .GroupBy(v => v.VoucherType)

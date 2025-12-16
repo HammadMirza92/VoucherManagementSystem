@@ -39,7 +39,15 @@
                 <label class="form-label">To Date</label>
                 <input type="date" name="toDate" value="@ViewBag.ToDate?.ToString("yyyy-MM-dd")" class="form-control" id="toDateFilter" />
             </div>
-            <div class="col-md-6">
+            <div class="col-md-2">
+                <label class="form-label">Stock Include</label>
+                <select name="stockInclude" class="form-select" id="stockIncludeFilter">
+                    <option value="">All</option>
+                    <option value="true" selected="@(ViewBag.StockInclude?.ToString() == "True")">Yes (1)</option>
+                    <option value="false" selected="@(ViewBag.StockInclude?.ToString() == "False")">No (0)</option>
+                </select>
+            </div>
+            <div class="col-md-4">
                 <label class="form-label">&nbsp;</label>
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary">
@@ -92,6 +100,7 @@
                     <th>Customer</th>
                     <th>Item</th>
                     <th>Project</th>
+                    <th>Stock</th>
                     <th>Amount</th>
                     <th>Actions</th>
                 </tr>
@@ -130,6 +139,11 @@
                                 </a>
                             }
                         </td>
+                        <td class="text-center">
+                            <span class="badge bg-@(item.StockInclude ? "success" : "secondary")">
+                                @(item.StockInclude ? "1" : "0")
+                            </span>
+                        </td>
                         <td class="text-end">@string.Format("{0:N0}", item.Amount)</td>
                         <td>
                             <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">
@@ -165,6 +179,7 @@
                 $('#projectFilter').val('');
                 $('#fromDateFilter').val('');
                 $('#toDateFilter').val('');
+                $('#stockIncludeFilter').val('');
                 window.location.href = '@Url.Action("Index", "Vouchers")';
             });
         });

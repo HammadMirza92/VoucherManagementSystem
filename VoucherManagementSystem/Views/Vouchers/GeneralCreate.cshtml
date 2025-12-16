@@ -64,14 +64,18 @@
 
 <!-- All Vouchers List Section -->
 <div class="card mb-3">
-    <div class="card-header">
-        <h5>All Vouchers (Total: @ViewBag.TotalRecords)</h5>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">All Vouchers (Total: @ViewBag.TotalRecords)</h5>
+        <button type="button" id="deleteSelected" class="btn btn-danger btn-sm" style="display:none;">
+            <i class="bi bi-trash"></i> Delete Selected
+        </button>
     </div>
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-striped table-sm">
                 <thead>
                     <tr>
+                        <th><input type="checkbox" id="selectAll" title="Select All" /></th>
                         <th>Type</th>
                         <th>Transaction No</th>
                         <th>Date</th>
@@ -90,14 +94,25 @@
                         @foreach (var item in voucherList)
                         {
                             <tr>
+                                <td><input type="checkbox" class="voucher-checkbox" value="@item.Id" /></td>
                                 <td><span class="badge bg-primary">@item.VoucherType</span></td>
                                 <td>@item.TransactionNumber</td>
                                 <td>@item.VoucherDate.ToString("dd-MMM-yyyy")</td>
                                 <td>
                                     @{
-                                        var customerName = item.PurchasingCustomer?.Name ?? item.ReceivingCustomer?.Name;
+                                        var customerName = item.PurchasingCustomer?.Name ?? item.ReceivingCustomer?.Name ?? "-";
+                                        var customerId = item.PurchasingCustomerId ?? item.ReceivingCustomerId;
                                     }
-                                    @customerName
+                                    @if (customerId.HasValue)
+                                    {
+                                        <a href="#" class="customer-ledger-link text-decoration-none" data-customer-id="@customerId.Value" title="View Customer Ledger">
+                                            @customerName <i class="bi bi-box-arrow-up-right"></i>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        @customerName
+                                    }
                                 </td>
                                 <td>@item.Item?.Name</td>
                                 <td>@item.Project?.Name</td>
@@ -111,6 +126,9 @@
                                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info" title="Details">
                                         <i class="bi bi-eye"></i>
                                     </a>
+                                    <button type="button" class="btn btn-sm btn-danger delete-voucher" data-id="@item.Id" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </td>
                             </tr>
                         }
@@ -118,7 +136,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="10" class="text-center">No vouchers found.</td>
+                            <td colspan="11" class="text-center">No vouchers found.</td>
                         </tr>
                     }
                 </tbody>
@@ -166,7 +184,7 @@
                 </div>
                 <div class="col-equal">
                     <label asp-for="VoucherDate" class="form-label">Voucher Date</label>
-                    <input asp-for="VoucherDate" type="date" class="form-control" />
+                    <input asp-for="VoucherDate" type="date" class="form-control" id="voucherDate" />
                 </div>
                 <div class="col-equal">
                     <label asp-for="VoucherType" class="form-label">Voucher Type</label>
@@ -252,6 +270,9 @@
                                             <label asp-for="PurchasingCustomerId" class="form-label mb-1" style="font-size: 0.85rem;">Purchasing Customer</label>
                                             <div class="input-group input-group-sm">
                                                 @Html.DropDownListFor(m => m.PurchasingCustomerId, ViewBag.Customers as SelectList, "Select Customer", new { @class = "form-select form-select-sm", id = "purchasingCustomer" })
+                                                <button type="button" class="btn btn-outline-primary btn-sm" id="viewPurchasingCustomerLedger" title="View Ledger">
+                                                    <i class="bi bi-file-text"></i>
+                                                </button>
                                                 <button type="button" class="btn btn-outline-secondary btn-sm" id="copyPurchasingCustomerName" title="Copy">
                                                     <i class="bi bi-clipboard"></i>
                                                 </button>
@@ -275,6 +296,9 @@
                                             <label asp-for="ReceivingCustomerId" class="form-label mb-1" style="font-size: 0.85rem;">Receiving Customer</label>
                                             <div class="input-group input-group-sm">
                                                 @Html.DropDownListFor(m => m.ReceivingCustomerId, ViewBag.Customers as SelectList, "Select Customer", new { @class = "form-select form-select-sm", id = "receivingCustomer" })
+                                                <button type="button" class="btn btn-outline-primary btn-sm" id="viewReceivingCustomerLedger" title="View Ledger">
+                                                    <i class="bi bi-file-text"></i>
+                                                </button>
                                                 <button type="button" class="btn btn-outline-secondary btn-sm" id="copyReceivingCustomerName" title="Copy">
                                                     <i class="bi bi-clipboard"></i>
                                                 </button>
@@ -418,6 +442,17 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
+            // Load saved voucher date from localStorage or set to today
+            var savedDate = localStorage.getItem('voucherDate');
+            if (savedDate) {
+                $('#voucherDate').val(savedDate);
+            }
+
+            // Save voucher date to localStorage when changed
+            $('#voucherDate').on('change', function() {
+                localStorage.setItem('voucherDate', $(this).val());
+            });
+
             // Auto-scroll to form after page load (when redirected after save)
             @if (TempData["Success"] != null)
             {
@@ -687,6 +722,17 @@
                 $('#amount').val((qty * rate).toFixed(2));
             });
 
+            // Auto-calculate rate from weight and amount (with decimals)
+            $('#weight, #amount').on('input change', function() {
+                var weight = parseFloat($('#weight').val()) || 0;
+                var amount = parseFloat($('#amount').val()) || 0;
+
+                if (weight > 0 && amount > 0) {
+                    var calculatedRate = amount / weight;
+                    $('#rate').val(calculatedRate.toFixed(4)); // Show up to 4 decimal places
+                }
+            });
+
             // Get item rate based on Receiving Customer (for Sale) or Purchasing Customer
             $('#itemSelect, #receivingCustomer, #purchasingCustomer').on('change', function() {
                 var itemId = $('#itemSelect').val();
@@ -755,6 +801,68 @@
                     });
                 }
             });
+
+            // View Purchasing Customer Ledger
+            $('#viewPurchasingCustomerLedger').on('click', function() {
+                var customerId = $('#purchasingCustomer').val();
+                if (customerId) {
+                    openCustomerLedger(customerId);
+                } else {
+                    alert('Please select a customer first.');
+                }
+            });
+
+            // View Receiving Customer Ledger
+            $('#viewReceivingCustomerLedger').on('click', function() {
+                var customerId = $('#receivingCustomer').val();
+                if (customerId) {
+                    openCustomerLedger(customerId);
+                } else {
+                    alert('Please select a customer first.');
+                }
+            });
+
+            // Select All / Deselect All
+            $('#selectAll').on('change', function() {
+                $('.voucher-checkbox').prop('checked', $(this).prop('checked'));
+                toggleDeleteButton();
+            });
+
+            // Update delete button visibility
+            $('.voucher-checkbox').on('change', function() {
+                toggleDeleteButton();
+            });
+
+            // Delete single voucher
+            $('.delete-voucher').on('click', function() {
+                var voucherId = $(this).data('id');
+                if (confirm('Are you sure you want to delete this voucher?')) {
+                    deleteVouchers([voucherId]);
+                }
+            });
+
+            // Delete selected vouchers
+            $('#deleteSelected').on('click', function() {
+                var selectedIds = [];
+                $('.voucher-checkbox:checked').each(function() {
+                    selectedIds.push($(this).val());
+                });
+
+                if (selectedIds.length > 0) {
+                    if (confirm('Are you sure you want to delete ' + selectedIds.length + ' voucher(s)?')) {
+                        deleteVouchers(selectedIds);
+                    }
+                }
+            });
+
+            // Customer ledger link in entries table
+            $(document).on('click', '.customer-ledger-link', function(e) {
+                e.preventDefault();
+                var customerId = $(this).data('customer-id');
+                if (customerId) {
+                    openCustomerLedger(customerId);
+                }
+            });
         });
 
         function updateTransactionNumber(voucherType) {
@@ -768,6 +876,55 @@
             $('input[type="text"]:not(#TransactionNumber), input[type="number"]').val('');
             $('select:not(#voucherTypeSelect)').prop('selectedIndex', 0);
             $('#purchasingCustomer, #receivingCustomer, #itemSelect').val(null).trigger('change');
+        }
+
+        function openCustomerLedger(customerId) {
+            // Get current date
+            var today = new Date();
+            var toDate = today.toISOString().split('T')[0];
+
+            // Get date from 1 month ago
+            var fromDate = new Date();
+            fromDate.setMonth(fromDate.getMonth() - 1);
+            var fromDateStr = fromDate.toISOString().split('T')[0];
+
+            // Build URL with parameters
+            var url = '@Url.Action("CustomerLedger", "Reports")' +
+                      '?customerId=' + customerId +
+                      '&fromDate=' + fromDateStr +
+                      '&toDate=' + toDate;
+
+            // Open in new tab
+            window.open(url, '_blank');
+        }
+
+        function toggleDeleteButton() {
+            var checkedCount = $('.voucher-checkbox:checked').length;
+            if (checkedCount > 0) {
+                $('#deleteSelected').show();
+            } else {
+                $('#deleteSelected').hide();
+            }
+        }
+
+        function deleteVouchers(voucherIds) {
+            $.ajax({
+                url: '@Url.Action("DeleteMultiple", "Vouchers")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(voucherIds),
+                success: function(response) {
+                    if (response.success) {
+                        alert(response.message);
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Error deleting vouchers: ' + error);
+                }
+            });
         }
 
         function configureFormForVoucherType(type) {

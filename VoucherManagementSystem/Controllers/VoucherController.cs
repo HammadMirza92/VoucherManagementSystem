@@ -36,7 +36,7 @@ namespace VoucherManagementSystem.Controllers
         }
 
         // GET: Vouchers
-        public async Task<IActionResult> Index(VoucherType? voucherType, int? customerId, int? projectId, int? itemId, DateTime? fromDate, DateTime? toDate)
+        public async Task<IActionResult> Index(VoucherType? voucherType, int? customerId, int? projectId, int? itemId, DateTime? fromDate, DateTime? toDate, bool? stockInclude)
         {
             // Start with all vouchers
             var vouchers = await _voucherRepository.GetVouchersWithDetailsAsync();
@@ -77,6 +77,11 @@ namespace VoucherManagementSystem.Controllers
                 vouchers = vouchers.Where(v => v.VoucherDate <= toDate.Value);
             }
 
+            if (stockInclude.HasValue)
+            {
+                vouchers = vouchers.Where(v => v.StockInclude == stockInclude.Value);
+            }
+
             ViewBag.Customers = new SelectList(await _customerRepository.GetActiveCustomersAsync(), "Id", "Name", customerId);
             ViewBag.Projects = new SelectList(await _projectRepository.GetActiveProjectsAsync(), "Id", "Name", projectId);
             ViewBag.Items = new SelectList(await _itemRepository.GetActiveItemsAsync(), "Id", "Name", itemId);
@@ -86,6 +91,7 @@ namespace VoucherManagementSystem.Controllers
             ViewBag.ItemId = itemId;
             ViewBag.FromDate = fromDate;
             ViewBag.ToDate = toDate;
+            ViewBag.StockInclude = stockInclude;
 
             return View(vouchers.ToList());
         }
@@ -474,6 +480,59 @@ namespace VoucherManagementSystem.Controllers
         {
             var transactionNumber = await _voucherRepository.GenerateTransactionNumberAsync(type);
             return Json(new { transactionNumber });
+        }
+
+        // POST: Vouchers/DeleteMultiple
+        [HttpPost]
+        public async Task<IActionResult> DeleteMultiple([FromBody] List<int> voucherIds)
+        {
+            try
+            {
+                if (voucherIds == null || !voucherIds.Any())
+                {
+                    return Json(new { success = false, message = "No vouchers selected for deletion." });
+                }
+
+                int deletedCount = 0;
+                foreach (var id in voucherIds)
+                {
+                    var voucher = await _voucherRepository.GetByIdAsync(id);
+                    if (voucher != null)
+                    {
+                        // Reverse stock changes - ONLY if StockInclude was true
+                        if (voucher.ItemId.HasValue && voucher.Quantity.HasValue && voucher.StockInclude)
+                        {
+                            if (voucher.VoucherType == VoucherType.Purchase)
+                            {
+                                await _itemRepository.UpdateStockAsync(voucher.ItemId.Value, voucher.Quantity.Value, false);
+                            }
+                            else if (voucher.VoucherType == VoucherType.Sale)
+                            {
+                                await _itemRepository.UpdateStockAsync(voucher.ItemId.Value, voucher.Quantity.Value, true);
+                            }
+                        }
+
+                        // Reverse bank changes
+                        if (voucher.BankCustomerPaidId.HasValue)
+                        {
+                            await _bankRepository.UpdateBalanceAsync(voucher.BankCustomerPaidId.Value, voucher.Amount, true);
+                        }
+                        if (voucher.BankCustomerReceiverId.HasValue)
+                        {
+                            await _bankRepository.UpdateBalanceAsync(voucher.BankCustomerReceiverId.Value, voucher.Amount, false);
+                        }
+
+                        await _voucherRepository.DeleteAsync(voucher);
+                        deletedCount++;
+                    }
+                }
+
+                return Json(new { success = true, message = $"Successfully deleted {deletedCount} voucher(s)." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error deleting vouchers: {ex.Message}" });
+            }
         }
 
         private async Task PrepareViewBags()
