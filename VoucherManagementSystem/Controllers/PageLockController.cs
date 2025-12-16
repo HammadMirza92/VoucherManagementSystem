@@ -211,11 +211,44 @@ namespace VoucherManagementSystem.Controllers
                 _context.MasterPasswords.Add(new MasterPassword
                 {
                     PasswordType = "MasterLock",
-                    Password = "admin123", // Default master password
+                    Password = "112233", // Default master password
                     LastModifiedDate = DateTime.Now,
                     LastModifiedBy = "system"
                 });
                 await _context.SaveChangesAsync();
+            }
+        }
+
+        // POST: PageLock/UpdateMasterPassword
+        [HttpPost]
+        public async Task<IActionResult> UpdateMasterPassword(string password)
+        {
+            try
+            {
+                var masterPassword = await _context.MasterPasswords
+                    .FirstOrDefaultAsync(mp => mp.PasswordType == "MasterLock");
+
+                if (masterPassword == null)
+                {
+                    return Json(new { success = false, message = "Master password not found" });
+                }
+
+                if (string.IsNullOrWhiteSpace(password))
+                {
+                    return Json(new { success = false, message = "Password cannot be empty" });
+                }
+
+                masterPassword.Password = password;
+                masterPassword.LastModifiedDate = DateTime.Now;
+                masterPassword.LastModifiedBy = HttpContext.Session.GetString("Username") ?? "admin";
+
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Master password updated successfully" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
             }
         }
     }

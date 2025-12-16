@@ -9,6 +9,32 @@
     <i class="bi bi-info-circle"></i> Configure page access restrictions. Locked pages will require password authentication.
 </div>
 
+<!-- Master Password Section -->
+<div class="card mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="bi bi-key-fill"></i> Master Password Settings</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="masterPassword" class="form-label">Set Master Password</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="masterPassword" placeholder="Enter new master password">
+                        <button class="btn btn-outline-secondary toggle-master-password-btn" type="button" title="Show/Hide Password">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-warning" type="button" id="updateMasterPasswordBtn">
+                            <i class="bi bi-shield-lock"></i> Update Master Password
+                        </button>
+                    </div>
+                    <div class="form-text">This password is used to access this Master Lock page.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header bg-primary text-white">
         <h5 class="mb-0"><i class="bi bi-list-check"></i> Page Lock Settings</h5>
@@ -113,6 +139,49 @@
             $('#pageLockTable').DataTable({
                 "pageLength": 25,
                 "order": [[0, "asc"]]
+            });
+
+            // Toggle show/hide master password
+            $('.toggle-master-password-btn').on('click', function() {
+                var passwordField = $('#masterPassword');
+                var icon = $(this).find('i');
+
+                if (passwordField.attr('type') === 'password') {
+                    passwordField.attr('type', 'text');
+                    icon.removeClass('bi-eye').addClass('bi-eye-slash');
+                } else {
+                    passwordField.attr('type', 'password');
+                    icon.removeClass('bi-eye-slash').addClass('bi-eye');
+                }
+            });
+
+            // Update master password
+            $('#updateMasterPasswordBtn').on('click', function() {
+                var password = $('#masterPassword').val();
+
+                if (!password || password.trim() === '') {
+                    alert('Please enter a password');
+                    return;
+                }
+
+                if (confirm('Are you sure you want to update the master password? This will change the password required to access this page.')) {
+                    $.ajax({
+                        url: '@Url.Action("UpdateMasterPassword", "PageLock")',
+                        type: 'POST',
+                        data: { password: password },
+                        success: function(response) {
+                            if (response.success) {
+                                showNotification('success', response.message);
+                                $('#masterPassword').val(''); // Clear the field
+                            } else {
+                                alert('Error: ' + response.message);
+                            }
+                        },
+                        error: function() {
+                            alert('Error updating master password');
+                        }
+                    });
+                }
             });
 
             // Toggle lock/unlock
