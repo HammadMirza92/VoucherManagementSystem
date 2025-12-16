@@ -29,6 +29,11 @@
                     <th>Address</th>
                     <th>Status</th>
                     <th>Created Date</th>
+                    @if (Context.Session.GetString("UserRole") == "Admin")
+                    {
+                        <th>Added By</th>
+                    }
+                    <th>Updated By</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -48,6 +53,11 @@
                                 </span>
                             </td>
                             <td>@item.CreatedDate.ToString("dd-MMM-yyyy")</td>
+                            @if (Context.Session.GetString("UserRole") == "Admin")
+                            {
+                                <td>@(item.CreatedBy ?? "N/A")</td>
+                            }
+                            <td>@(item.UpdatedBy ?? "N/A")</td>
                             <td>
                                 <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info" title="View Details">
                                     <i class="bi bi-eye"></i>
@@ -68,7 +78,7 @@
                 else
                 {
                     <tr>
-                        <td colspan="7" class="text-center">No customers found. <a asp-action="Create">Create your first customer</a></td>
+                        <td colspan="@(Context.Session.GetString("UserRole") == "Admin" ? "10" : "9")" class="text-center">No customers found. <a asp-action="Create">Create your first customer</a></td>
                     </tr>
                 }
             </tbody>
@@ -80,11 +90,13 @@
     <script>
         $(document).ready(function() {
             if ($('#customersTable tbody tr').length > 1) {
+                var isAdmin = '@Context.Session.GetString("UserRole")' === 'Admin';
+                var actionsColumnIndex = isAdmin ? 8 : 7;
                 $('#customersTable').DataTable({
                     "order": [[0, "desc"]],
                     "pageLength": 10,
                     "columnDefs": [
-                        { "orderable": false, "targets": 6 }
+                        { "orderable": false, "targets": actionsColumnIndex }
                     ]
                 });
             }

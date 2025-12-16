@@ -110,6 +110,13 @@ namespace VoucherManagementSystem.Models
         [Display(Name = "Created By")]
         public string? CreatedBy { get; set; }
 
+        [Display(Name = "Updated Date")]
+        public DateTime? UpdatedDate { get; set; }
+
+        [StringLength(100)]
+        [Display(Name = "Updated By")]
+        public string? UpdatedBy { get; set; }
+
         // Navigation properties
         public virtual Customer? PurchasingCustomer { get; set; }
         public virtual Customer? ReceivingCustomer { get; set; }

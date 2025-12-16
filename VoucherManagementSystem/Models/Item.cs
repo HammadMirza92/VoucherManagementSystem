@@ -32,6 +32,17 @@ namespace VoucherManagementSystem.Models
         [Display(Name = "Created Date")]
         public DateTime CreatedDate { get; set; } = DateTime.Now;
 
+        [StringLength(100)]
+        [Display(Name = "Created By")]
+        public string? CreatedBy { get; set; }
+
+        [Display(Name = "Updated Date")]
+        public DateTime? UpdatedDate { get; set; }
+
+        [StringLength(100)]
+        [Display(Name = "Updated By")]
+        public string? UpdatedBy { get; set; }
+
         // Navigation properties
         public virtual ICollection<CustomerItemRate>? CustomerItemRates { get; set; }
         public virtual ICollection<Voucher>? Vouchers { get; set; }
