@@ -377,6 +377,10 @@ namespace VoucherManagementSystem.Controllers
                     await _bankRepository.UpdateBalanceAsync(voucher.BankCustomerReceiverId.Value, voucher.Amount, true);
                 }
 
+                // Set updated by and updated date
+                voucher.UpdatedBy = HttpContext.Session.GetString("Username") ?? "admin";
+                voucher.UpdatedDate = DateTime.Now;
+
                 await _voucherRepository.UpdateAsync(voucher);
                 TempData["Success"] = "Voucher updated successfully!";
                 return RedirectToAction(nameof(Index));

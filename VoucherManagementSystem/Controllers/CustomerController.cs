@@ -93,6 +93,7 @@ namespace VoucherManagementSystem.Controllers
                 if (ModelState.IsValid)
                 {
                     customer.CreatedDate = DateTime.Now;
+                    customer.CreatedBy = HttpContext.Session.GetString("Username") ?? "admin";
                     await _customerRepository.AddAsync(customer);
                     TempData["Success"] = "Customer created successfully!";
                     return RedirectToAction(nameof(Index));
@@ -141,7 +142,7 @@ namespace VoucherManagementSystem.Controllers
         // POST: Customers/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Phone,Address,IsActive,CreatedDate")] Customer customer)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Phone,Address,IsActive,CreatedDate,CreatedBy")] Customer customer)
         {
             if (id != customer.Id)
             {
@@ -157,6 +158,8 @@ namespace VoucherManagementSystem.Controllers
 
                 if (ModelState.IsValid)
                 {
+                    customer.UpdatedBy = HttpContext.Session.GetString("Username") ?? "admin";
+                    customer.UpdatedDate = DateTime.Now;
                     _context.Update(customer);
                     await _context.SaveChangesAsync();
                     TempData["Success"] = "Customer updated successfully!";

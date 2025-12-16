@@ -46,6 +46,8 @@ namespace VoucherManagementSystem.Controllers
         {
             if (ModelState.IsValid)
             {
+                bank.CreatedBy = HttpContext.Session.GetString("Username") ?? "admin";
+                bank.CreatedDate = DateTime.Now;
                 await _bankRepository.AddAsync(bank);
                 TempData["Success"] = "Bank created successfully!";
                 return RedirectToAction(nameof(Index));
@@ -81,6 +83,8 @@ namespace VoucherManagementSystem.Controllers
             {
                 try
                 {
+                    bank.UpdatedBy = HttpContext.Session.GetString("Username") ?? "admin";
+                    bank.UpdatedDate = DateTime.Now;
                     await _bankRepository.UpdateAsync(bank);
                     TempData["Success"] = "Bank updated successfully!";
                 }
