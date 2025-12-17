@@ -1299,6 +1299,116 @@ namespace VoucherManagementSystem.Controllers
             }
         }
 
+        // GET: Reports/ExpenseReport - Expense only (excluding Hazri)
+        public async Task<IActionResult> ExpenseReport(DateTime? fromDate, DateTime? toDate, int? expenseHeadId, int? projectId)
+        {
+            try
+            {
+                var startDate = fromDate ?? DateTime.Today.AddMonths(-1);
+                var endDate = toDate ?? DateTime.Today;
+
+                ViewBag.ExpenseHeads = new SelectList(await _expenseHeadRepository.GetActiveExpenseHeadsAsync(), "Id", "Name", expenseHeadId);
+                ViewBag.Projects = new SelectList(await _projectRepository.GetActiveProjectsAsync(), "Id", "Name", projectId);
+
+                var query = _context.Vouchers
+                    .Include(v => v.ExpenseHead)
+                    .Include(v => v.Project)
+                    .Include(v => v.PurchasingCustomer)
+                    .Where(v => v.VoucherType == VoucherType.Expense &&
+                               v.VoucherDate >= startDate && v.VoucherDate <= endDate.AddDays(1));
+
+                if (expenseHeadId.HasValue)
+                {
+                    query = query.Where(v => v.ExpenseHeadId == expenseHeadId);
+                }
+
+                if (projectId.HasValue)
+                {
+                    query = query.Where(v => v.ProjectId == projectId);
+                }
+
+                var expenses = await query.OrderByDescending(v => v.VoucherDate).ThenByDescending(v => v.Id).ToListAsync();
+
+                // Group by expense head for summary
+                var expenseSummary = expenses
+                    .GroupBy(e => e.ExpenseHead?.Name ?? "Unknown")
+                    .Select(g => new { ExpenseHead = g.Key, Total = g.Sum(e => e.Amount) })
+                    .OrderByDescending(x => x.Total)
+                    .ToList();
+
+                ViewBag.FromDate = startDate;
+                ViewBag.ToDate = endDate;
+                ViewBag.SelectedExpenseHeadId = expenseHeadId;
+                ViewBag.SelectedProjectId = projectId;
+                ViewBag.Expenses = expenses;
+                ViewBag.ExpenseSummary = expenseSummary;
+                ViewBag.TotalExpenses = expenses.Sum(e => e.Amount);
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating expense report");
+                TempData["Error"] = "Error generating expense report.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // GET: Reports/HazriReport - Hazri (Attendance) only
+        public async Task<IActionResult> HazriReport(DateTime? fromDate, DateTime? toDate, int? expenseHeadId, int? projectId)
+        {
+            try
+            {
+                var startDate = fromDate ?? DateTime.Today.AddMonths(-1);
+                var endDate = toDate ?? DateTime.Today;
+
+                ViewBag.ExpenseHeads = new SelectList(await _expenseHeadRepository.GetActiveExpenseHeadsAsync(), "Id", "Name", expenseHeadId);
+                ViewBag.Projects = new SelectList(await _projectRepository.GetActiveProjectsAsync(), "Id", "Name", projectId);
+
+                var query = _context.Vouchers
+                    .Include(v => v.ExpenseHead)
+                    .Include(v => v.Project)
+                    .Include(v => v.PurchasingCustomer)
+                    .Where(v => v.VoucherType == VoucherType.Hazri &&
+                               v.VoucherDate >= startDate && v.VoucherDate <= endDate.AddDays(1));
+
+                if (expenseHeadId.HasValue)
+                {
+                    query = query.Where(v => v.ExpenseHeadId == expenseHeadId);
+                }
+
+                if (projectId.HasValue)
+                {
+                    query = query.Where(v => v.ProjectId == projectId);
+                }
+
+                var hazriRecords = await query.OrderByDescending(v => v.VoucherDate).ThenByDescending(v => v.Id).ToListAsync();
+
+                // Group by expense head for summary
+                var hazriSummary = hazriRecords
+                    .GroupBy(h => h.ExpenseHead?.Name ?? "Unknown")
+                    .Select(g => new { ExpenseHead = g.Key, Total = g.Sum(h => h.Amount) })
+                    .OrderByDescending(x => x.Total)
+                    .ToList();
+
+                ViewBag.FromDate = startDate;
+                ViewBag.ToDate = endDate;
+                ViewBag.SelectedExpenseHeadId = expenseHeadId;
+                ViewBag.SelectedProjectId = projectId;
+                ViewBag.HazriRecords = hazriRecords;
+                ViewBag.HazriSummary = hazriSummary;
+                ViewBag.TotalHazri = hazriRecords.Sum(h => h.Amount);
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating hazri report");
+                TempData["Error"] = "Error generating hazri report.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
         // GET: Reports/AllProjectsReport - All projects summary
         public async Task<IActionResult> AllProjectsReport(DateTime? fromDate, DateTime? toDate)
         {
