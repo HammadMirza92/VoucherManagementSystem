@@ -79,7 +79,7 @@
 </div>
 
 <div class="row">
-    <div class="col-md-6">
+    <div class="col-md-3">
         <div class="card mb-3">
             <div class="card-header bg-primary text-white">
                 <h5><i class="bi bi-bar-chart"></i> Project Profit & Loss Report</h5>
@@ -118,7 +118,7 @@
         </div>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-md-3">
         <div class="card mb-3">
             <div class="card-header bg-success text-white">
                 <h5><i class="bi bi-bank"></i> Bank Statement</h5>
@@ -156,10 +156,8 @@
             </div>
         </div>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-md-6">
+    <div class="col-md-3">
         <div class="card mb-3">
             <div class="card-header bg-success text-white">
                 <h5><i class="bi bi-cash-stack"></i> Cash Statement</h5>
@@ -171,9 +169,20 @@
                 </a>
             </div>
         </div>
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="bi bi-receipt-cutoff"></i> Daily Cash Book</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">View daily cash transactions and balances.</p>
+                <a asp-action="DailyCashBook" class="btn btn-primary w-100">
+                    <i class="bi bi-file-earmark-text"></i> View Daily Cash Book
+                </a>
+            </div>
+        </div>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-md-3">
         <div class="card mb-3">
             <div class="card-header bg-info text-white">
                 <h5><i class="bi bi-box-seam"></i> Stock Report</h5>
@@ -185,11 +194,6 @@
                 </a>
             </div>
         </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-6">
         <div class="card mb-3">
             <div class="card-header bg-primary text-white">
                 <h5><i class="bi bi-box-arrow-in-down"></i> Stock Track Report</h5>
@@ -202,8 +206,10 @@
             </div>
         </div>
     </div>
+</div>
 
-    <div class="col-md-6">
+<div class="row">
+    <div class="col-md-3">
         <div class="card mb-3">
             <div class="card-header bg-danger text-white">
                 <h5><i class="bi bi-person-lines-fill"></i> Customer Ledger</h5>
@@ -213,45 +219,6 @@
                 <a asp-action="CustomerLedger" class="btn btn-danger w-100">
                     <i class="bi bi-file-earmark-text"></i> View Customer Ledger
                 </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-6">
-        <div class="card mb-3">
-            <div class="card-header bg-warning text-dark">
-                <h5><i class="bi bi-download"></i> Export Reports</h5>
-            </div>
-            <div class="card-body">
-                <p class="text-muted">Export data to Excel for further analysis.</p>
-                <form asp-action="ExportToExcel" method="get">
-                    <div class="mb-3">
-                        <label class="form-label">Select Report Type <span class="text-danger">*</span></label>
-                        <select name="reportType" class="form-select" required>
-                            <option value="">-- Select Report Type --</option>
-                            <option value="vouchers">All Vouchers</option>
-                            <option value="stock">Stock Report</option>
-                            <option value="customers">Customer List</option>
-                            <option value="items">Items List</option>
-                            <option value="banks">Banks List</option>
-                        </select>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">From Date (Optional)</label>
-                            <input type="date" name="fromDate" class="form-control" />
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">To Date (Optional)</label>
-                            <input type="date" name="toDate" class="form-control" />
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-warning w-100">
-                        <i class="bi bi-file-earmark-excel"></i> Export to Excel
-                    </button>
-                </form>
             </div>
         </div>
     </div>
