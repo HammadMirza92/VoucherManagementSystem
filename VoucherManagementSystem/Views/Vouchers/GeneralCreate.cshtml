@@ -129,9 +129,9 @@
                                     </a>
                                 }
                             </td>
-                            <td class="text-end">@(item.Quantity.HasValue ? string.Format("{0:N3}", item.Quantity.Value) : "-")</td>
-                            <td class="text-end">@(item.Rate.HasValue ? string.Format("{0:N2}", item.Rate.Value) : "-")</td>
-                            <td class="text-end">@string.Format("{0:N0}", item.Amount)</td>
+                            <td>@(item.Quantity.HasValue ? string.Format("{0:N3}", item.Quantity.Value) : "-")</td>
+                            <td>@(item.Rate.HasValue ? string.Format("{0:N2}", item.Rate.Value) : "-")</td>
+                            <td>@string.Format("{0:N0}", item.Amount)</td>
                             @if (Context.Session.GetString("UserRole") == "Admin")
                             {
                                 <td>@(item.CreatedBy ?? "N/A")</td>
