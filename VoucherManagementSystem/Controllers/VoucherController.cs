@@ -141,6 +141,9 @@ namespace VoucherManagementSystem.Controllers
             var totalRecords = filteredVouchers.Count;
             var totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
 
+            // Ensure at least 1 page
+            if (totalPages < 1) totalPages = 1;
+
             // If no page specified, show the last page (most recent entries)
             var currentPage = page ?? totalPages;
             if (currentPage < 1) currentPage = 1;
