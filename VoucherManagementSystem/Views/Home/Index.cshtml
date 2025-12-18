@@ -66,13 +66,13 @@
                 </div>
             </div>
             <div class="col">
-                <div class="text-white-50 text-uppercase small fw-bold" style="letter-spacing: 1px;">Total Capital</div>
-                <h2 class="text-white fw-bold mb-0" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">Rs. @string.Format("{0:N0}", totalCapital)</h2>
-                <small class="text-white" style="opacity: 0.8;">Stock + Receivables + Cash + Bank - Payables - Expenses</small>
+                <div class="text-white text-uppercase small fw-bold" style="letter-spacing: 1px;">Total Capital</div>
+                <h2 class="text-white fw-bold mb-0" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Rs. @string.Format("{0:N0}", totalCapital)</h2>
+                <small class="text-white">Stock + Receivables + Cash + Bank - Payables - Expenses</small>
             </div>
             <div class="col-auto d-none d-md-block">
                 <div class="text-end">
-                    <div class="text-white small" style="opacity: 0.9;"><i class="bi bi-calendar-check"></i> As of @DateTime.Now.ToString("dd MMM yyyy")</div>
+                    <div class="text-white small"><i class="bi bi-calendar-check"></i> As of @DateTime.Now.ToString("dd MMM yyyy")</div>
                 </div>
             </div>
         </div>
