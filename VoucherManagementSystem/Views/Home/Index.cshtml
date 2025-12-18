@@ -82,7 +82,7 @@
 <!-- Summary Cards - 6 columns -->
 <div class="row g-2 mb-3">
     <div class="col-6 col-md-2">
-        <div class="card h-100 border-success">
+        <div class="card h-100 border-success dashboard-card">
             <div class="card-body py-2 px-2 text-center">
                 <i class="bi bi-box-seam text-success"></i>
                 <div class="small text-muted">Stock</div>
@@ -91,7 +91,7 @@
         </div>
     </div>
     <div class="col-6 col-md-2">
-        <div class="card h-100 border-info">
+        <div class="card h-100 border-info dashboard-card">
             <div class="card-body py-2 px-2 text-center">
                 <i class="bi bi-arrow-down-circle text-info"></i>
                 <div class="small text-muted">Receivable</div>
@@ -100,7 +100,7 @@
         </div>
     </div>
     <div class="col-6 col-md-2">
-        <div class="card h-100 border-danger">
+        <div class="card h-100 border-danger dashboard-card">
             <div class="card-body py-2 px-2 text-center">
                 <i class="bi bi-arrow-up-circle text-danger"></i>
                 <div class="small text-muted">Payable</div>
@@ -109,7 +109,7 @@
         </div>
     </div>
     <div class="col-6 col-md-2">
-        <div class="card h-100 border-warning">
+        <div class="card h-100 border-warning dashboard-card">
             <div class="card-body py-2 px-2 text-center">
                 <i class="bi bi-cash-stack text-warning"></i>
                 <div class="small text-muted">Cash</div>
@@ -118,7 +118,7 @@
         </div>
     </div>
     <div class="col-6 col-md-2">
-        <div class="card h-100" style="border-color: #6f42c1;">
+        <div class="card h-100 dashboard-card" style="border-color: #6f42c1;">
             <div class="card-body py-2 px-2 text-center">
                 <i class="bi bi-bank" style="color: #6f42c1;"></i>
                 <div class="small text-muted">Bank</div>
@@ -127,7 +127,7 @@
         </div>
     </div>
     <div class="col-6 col-md-2">
-        <div class="card h-100" style="border-color: #e83e8c;">
+        <div class="card h-100 dashboard-card" style="border-color: #e83e8c;">
             <div class="card-body py-2 px-2 text-center">
                 <i class="bi bi-graph-down" style="color: #e83e8c;"></i>
                 <div class="small text-muted">Expenses</div>
@@ -141,7 +141,7 @@
 <div class="row g-2 mb-3">
     <!-- Capital Pie -->
     <div class="col-md-3">
-        <div class="card">
+        <div class="card dashboard-card">
             <div class="card-header py-1 bg-white">
                 <small class="fw-bold"><i class="bi bi-pie-chart"></i> Capital</small>
             </div>
@@ -152,7 +152,7 @@
     </div>
     <!-- Monthly Trends -->
     <div class="col-md-5">
-        <div class="card">
+        <div class="card dashboard-card">
             <div class="card-header py-1 bg-white">
                 <small class="fw-bold"><i class="bi bi-graph-up"></i> Monthly Trends</small>
             </div>
@@ -163,7 +163,7 @@
     </div>
     <!-- Expense Chart -->
     <div class="col-md-4">
-        <div class="card">
+        <div class="card dashboard-card">
             <div class="card-header py-1 bg-white">
                 <small class="fw-bold"><i class="bi bi-bar-chart"></i> Expenses</small>
             </div>
@@ -178,7 +178,7 @@
 <div class="row g-2 mb-3">
     <!-- Receivables -->
     <div class="col-md-3">
-        <div class="card h-100">
+        <div class="card h-100 dashboard-card">
             <div class="card-header py-1 bg-success text-white d-flex justify-content-between align-items-center">
                 <small><i class="bi bi-arrow-down-circle"></i> Receivables</small>
                 <small class="fw-bold">@string.Format("{0:N0}", totalReceivables)</small>
@@ -204,7 +204,7 @@
 
     <!-- Payables -->
     <div class="col-md-3">
-        <div class="card h-100">
+        <div class="card h-100 dashboard-card">
             <div class="card-header py-1 bg-danger text-white d-flex justify-content-between align-items-center">
                 <small><i class="bi bi-arrow-up-circle"></i> Payables</small>
                 <small class="fw-bold">@string.Format("{0:N0}", totalPayables)</small>
@@ -230,7 +230,7 @@
 
     <!-- Stock -->
     <div class="col-md-3">
-        <div class="card h-100">
+        <div class="card h-100 dashboard-card">
             <div class="card-header py-1 bg-primary text-white d-flex justify-content-between align-items-center">
                 <small><i class="bi bi-box-seam"></i> Stock Items</small>
                 <small class="fw-bold">@string.Format("{0:N0}", totalStockValue)</small>
@@ -257,7 +257,7 @@
 
     <!-- Banks -->
     <div class="col-md-3">
-        <div class="card h-100">
+        <div class="card h-100 dashboard-card">
             <div class="card-header py-1 text-white" style="background-color: #6f42c1;">
                 <small><i class="bi bi-bank"></i> Bank Accounts</small>
             </div>
@@ -289,7 +289,7 @@
 <!-- Recent Transactions -->
 <div class="row">
     <div class="col-12">
-        <div class="card">
+        <div class="card dashboard-card">
             <div class="card-header py-1 bg-dark text-white d-flex justify-content-between">
                 <small><i class="bi bi-clock-history"></i> Recent Transactions</small>
                 <small>Today: @ViewBag.TodayTransactions txns | Rs. @string.Format("{0:N0}", todayAmount)</small>
@@ -349,6 +349,18 @@
 }
 
 @section Scripts {
+    <style>
+        .dashboard-card {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            padding: 6px;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         Chart.defaults.font.size = 10;
