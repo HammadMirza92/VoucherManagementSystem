@@ -98,7 +98,6 @@ VALUES ('MasterLock', 'admin123');
 
 INSERT INTO Users
 (
-    Id,
     Username,
     Password,
     FullName,
@@ -112,7 +111,6 @@ INSERT INTO Users
 )
 VALUES
 (
-    1,
     'admin',
     'admin123',
     'System Administrator',
