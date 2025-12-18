@@ -95,6 +95,36 @@ ALTER TABLE PageLocks ADD LockMode nvarchar(20) NOT NULL DEFAULT 'JustView';
 GO
 INSERT INTO MasterPasswords (PasswordType, Password)
 VALUES ('MasterLock', 'admin123');
+
+INSERT INTO Users
+(
+    Id,
+    Username,
+    Password,
+    FullName,
+    Email,
+    Phone,
+    Role,
+    IsActive,
+    CreatedDate,
+    LastLoginDate,
+    CreatedBy
+)
+VALUES
+(
+    1,
+    'admin',
+    'admin123',
+    'System Administrator',
+    'admin@system.com',
+    NULL,
+    'Admin',
+    1,
+    '2025-12-18 21:33:39.5019905',
+    NULL,
+    'system'
+);
+
 --Steps to Complete the Implementation
 --Run the SQL Script:
 --Open SQL Server Management Studio (SSMS) or your preferred SQL client
