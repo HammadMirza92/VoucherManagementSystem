@@ -18,7 +18,7 @@ namespace VoucherManagementSystem.Repositories
 
         public virtual async Task<IEnumerable<T>> GetAllAsync()
         {
-            return await _dbSet.ToListAsync();
+            return await _dbSet.AsNoTracking().ToListAsync();
         }
 
         public virtual async Task<T> GetByIdAsync(int id)
@@ -28,7 +28,7 @@ namespace VoucherManagementSystem.Repositories
 
         public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> expression)
         {
-            return await _dbSet.Where(expression).ToListAsync();
+            return await _dbSet.AsNoTracking().Where(expression).ToListAsync();
         }
 
         public virtual async Task<T> AddAsync(T entity)
@@ -58,7 +58,7 @@ namespace VoucherManagementSystem.Repositories
 
         public virtual IQueryable<T> GetQueryable()
         {
-            return _dbSet.AsQueryable();
+            return _dbSet.AsNoTracking().AsQueryable();
         }
     }
 }

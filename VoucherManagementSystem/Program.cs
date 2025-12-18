@@ -13,9 +13,18 @@ builder.Services.AddControllersWithViews(options =>
 })
     .AddRazorRuntimeCompilation();
 
-// Configure Entity Framework
+// Configure Entity Framework with performance optimizations
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions =>
+        {
+            sqlOptions.CommandTimeout(30); // Fast timeout
+            sqlOptions.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorNumbersToAdd: null);
+        });
+    options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking); // Faster read operations
+    options.EnableSensitiveDataLogging(false); // Reduce overhead
+});
 
 // Register Repository Services
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
@@ -41,6 +50,12 @@ builder.Services.AddSession(options =>
 // Add HttpContextAccessor
 builder.Services.AddHttpContextAccessor();
 
+// Add response compression for faster data transfer
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -51,7 +66,15 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+app.UseResponseCompression();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        // Cache static files for 7 days
+        ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=604800");
+    }
+});
 
 app.UseRouting();
 

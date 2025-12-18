@@ -57,12 +57,16 @@ function formatDate(date) {
     return new Date(date).toLocaleDateString('en-US', options);
 }
 
-// Show loading spinner
+// Show loading spinner - fast version
 function showLoading() {
-    $('body').append('<div class="loading-overlay"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+    // Only show if operation takes longer than 100ms
+    const loadingHtml = '<div class="loading-overlay" style="opacity:0"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+    $('body').append(loadingHtml);
+    // Quick fade in
+    setTimeout(() => $('.loading-overlay').css('opacity', '1'), 10);
 }
 
-// Hide loading spinner
+// Hide loading spinner - instant removal
 function hideLoading() {
     $('.loading-overlay').remove();
 }
@@ -209,7 +213,7 @@ resetSessionTimeout();
 document.addEventListener('click', resetSessionTimeout);
 document.addEventListener('keypress', resetSessionTimeout);
 
-// Loading style
+// Loading style - optimized for fast display
 const loadingStyle = `
 <style>
 .loading-overlay {
@@ -218,11 +222,16 @@ const loadingStyle = `
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.3);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 9999;
+    transition: opacity 0.15s ease-in;
+}
+.loading-overlay .spinner-border-sm {
+    width: 2rem;
+    height: 2rem;
 }
 </style>
 `;

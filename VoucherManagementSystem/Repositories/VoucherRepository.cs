@@ -28,14 +28,16 @@ namespace VoucherManagementSystem.Repositories
 
             // Simple sequential numbering: PUR-1, PUR-2, SAL-1, etc.
             var lastVoucher = await _context.Vouchers
+                .AsNoTracking()
                 .Where(v => v.TransactionNumber.StartsWith($"{prefix}-"))
                 .OrderByDescending(v => v.Id)
+                .Select(v => v.TransactionNumber)
                 .FirstOrDefaultAsync();
 
             int nextNumber = 1;
-            if (lastVoucher != null)
+            if (!string.IsNullOrEmpty(lastVoucher))
             {
-                var lastNumber = lastVoucher.TransactionNumber.Split('-').Last();
+                var lastNumber = lastVoucher.Split('-').Last();
                 if (int.TryParse(lastNumber, out int num))
                 {
                     nextNumber = num + 1;
@@ -48,6 +50,8 @@ namespace VoucherManagementSystem.Repositories
         public async Task<IEnumerable<Voucher>> GetVouchersByTypeAsync(VoucherType type)
         {
             return await _context.Vouchers
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Include(v => v.PurchasingCustomer)
                 .Include(v => v.ReceivingCustomer)
                 .Include(v => v.Item)
@@ -60,6 +64,8 @@ namespace VoucherManagementSystem.Repositories
         public async Task<IEnumerable<Voucher>> GetVouchersByDateRangeAsync(DateTime fromDate, DateTime toDate)
         {
             return await _context.Vouchers
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Include(v => v.PurchasingCustomer)
                 .Include(v => v.ReceivingCustomer)
                 .Include(v => v.Item)
@@ -72,6 +78,8 @@ namespace VoucherManagementSystem.Repositories
         public async Task<IEnumerable<Voucher>> GetVouchersByCustomerAsync(int customerId)
         {
             return await _context.Vouchers
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Include(v => v.PurchasingCustomer)
                 .Include(v => v.ReceivingCustomer)
                 .Include(v => v.Item)
@@ -84,6 +92,8 @@ namespace VoucherManagementSystem.Repositories
         public async Task<IEnumerable<Voucher>> GetVouchersByProjectAsync(int projectId)
         {
             return await _context.Vouchers
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Include(v => v.PurchasingCustomer)
                 .Include(v => v.ReceivingCustomer)
                 .Include(v => v.Item)
@@ -96,6 +106,8 @@ namespace VoucherManagementSystem.Repositories
         public async Task<IEnumerable<Voucher>> GetVouchersWithDetailsAsync()
         {
             return await _context.Vouchers
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Include(v => v.PurchasingCustomer)
                 .Include(v => v.ReceivingCustomer)
                 .Include(v => v.BankCustomerPaid)
@@ -109,22 +121,25 @@ namespace VoucherManagementSystem.Repositories
 
         public async Task<decimal> GetProjectProfitLossAsync(int projectId, DateTime fromDate, DateTime toDate)
         {
-            var vouchers = await _context.Vouchers
+            // Optimized: Calculate directly in database instead of loading all vouchers
+            var revenue = await _context.Vouchers
+                .AsNoTracking()
                 .Where(v => v.ProjectId == projectId &&
                             v.VoucherDate >= fromDate &&
-                            v.VoucherDate <= toDate)
-                .ToListAsync();
+                            v.VoucherDate <= toDate &&
+                            (v.VoucherType == VoucherType.Sale || v.VoucherType == VoucherType.CashReceived))
+                .SumAsync(v => v.Amount);
 
-            decimal revenue = vouchers
-                .Where(v => v.VoucherType == VoucherType.Sale || v.VoucherType == VoucherType.CashReceived)
-                .Sum(v => v.Amount);
-
-            decimal expenses = vouchers
-                .Where(v => v.VoucherType == VoucherType.Purchase ||
-                           v.VoucherType == VoucherType.Expense ||
-                           v.VoucherType == VoucherType.CashPaid ||
-                           v.VoucherType == VoucherType.Hazri)
-                .Sum(v => v.Amount);
+            var expenses = await _context.Vouchers
+                .AsNoTracking()
+                .Where(v => v.ProjectId == projectId &&
+                            v.VoucherDate >= fromDate &&
+                            v.VoucherDate <= toDate &&
+                            (v.VoucherType == VoucherType.Purchase ||
+                             v.VoucherType == VoucherType.Expense ||
+                             v.VoucherType == VoucherType.CashPaid ||
+                             v.VoucherType == VoucherType.Hazri))
+                .SumAsync(v => v.Amount);
 
             return revenue - expenses;
         }
