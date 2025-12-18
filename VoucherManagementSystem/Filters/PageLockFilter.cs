@@ -99,6 +99,18 @@ namespace VoucherManagementSystem.Filters
                     };
                     return; // IMPORTANT: Don't call next() - block the request here
                 }
+                else
+                {
+                    // Page is unlocked - check lock mode to determine if we should clear the session
+                    // If mode is "JustView", clear the session key so next visit requires password again
+                    // If mode is "Login", keep the session key so user stays unlocked until session expires
+                    if (matchedLock.LockMode == "JustView")
+                    {
+                        // Clear the unlock status for next visit
+                        httpContext.Session.Remove(sessionKey);
+                    }
+                    // If "Login" mode, session persists until explicitly cleared or session expires
+                }
             }
 
             await next();

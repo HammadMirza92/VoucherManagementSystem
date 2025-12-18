@@ -19,6 +19,10 @@ namespace VoucherManagementSystem.Models
         [MaxLength(500)]
         public string? Password { get; set; }
 
+        // Lock mode: "JustView" = lock after navigating away, "Login" = stay unlocked during session
+        [MaxLength(20)]
+        public string LockMode { get; set; } = "JustView";
+
         public DateTime? LastModifiedDate { get; set; }
 
         [MaxLength(100)]

@@ -30,6 +30,17 @@ namespace VoucherManagementSystem.Controllers
             await InitializePageLocksAsync();
             await InitializeMasterPasswordAsync();
 
+            // Get Master Lock page configuration to check its lock mode
+            var masterLockPage = await _context.PageLocks
+                .FirstOrDefaultAsync(p => p.PageUrl == "/PageLock/MasterLock");
+
+            // If "JustView" mode, clear the session so user needs password again on next visit
+            if (masterLockPage != null && masterLockPage.LockMode == "JustView")
+            {
+                HttpContext.Session.Remove("MasterLockUnlocked");
+            }
+            // If "Login" mode, session persists
+
             var pageLocks = await _context.PageLocks.OrderBy(p => p.PageName).ToListAsync();
             return View(pageLocks);
         }
@@ -75,7 +86,8 @@ namespace VoucherManagementSystem.Controllers
         {
             try
             {
-                var pageLock = await _context.PageLocks.FindAsync(id);
+                // Use AsTracking to enable change tracking since NoTracking is global
+                var pageLock = await _context.PageLocks.AsTracking().FirstOrDefaultAsync(p => p.Id == id);
                 if (pageLock == null)
                 {
                     return Json(new { success = false, message = "Page lock not found" });
@@ -101,7 +113,8 @@ namespace VoucherManagementSystem.Controllers
         {
             try
             {
-                var pageLock = await _context.PageLocks.FindAsync(id);
+                // Use AsTracking to enable change tracking
+                var pageLock = await _context.PageLocks.AsTracking().FirstOrDefaultAsync(p => p.Id == id);
                 if (pageLock == null)
                 {
                     return Json(new { success = false, message = "Page lock not found" });
@@ -219,13 +232,55 @@ namespace VoucherManagementSystem.Controllers
             }
         }
 
+        // POST: PageLock/UpdateLockMode
+        [HttpPost]
+        public async Task<IActionResult> UpdateLockMode(int id, string lockMode)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"UpdateLockMode called: id={id}, lockMode={lockMode}");
+
+                // Use AsTracking to enable change tracking
+                var pageLock = await _context.PageLocks.AsTracking().FirstOrDefaultAsync(p => p.Id == id);
+                if (pageLock == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Page lock not found for id={id}");
+                    return Json(new { success = false, message = "Page lock not found" });
+                }
+
+                if (lockMode != "JustView" && lockMode != "Login")
+                {
+                    System.Diagnostics.Debug.WriteLine($"Invalid lock mode: {lockMode}");
+                    return Json(new { success = false, message = "Invalid lock mode" });
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Before update - Current LockMode: {pageLock.LockMode}");
+                pageLock.LockMode = lockMode;
+                pageLock.LastModifiedDate = DateTime.Now;
+                pageLock.LastModifiedBy = HttpContext.Session.GetString("Username") ?? "admin";
+
+                var changes = await _context.SaveChangesAsync();
+                System.Diagnostics.Debug.WriteLine($"After update - Changes saved: {changes}, New LockMode: {pageLock.LockMode}");
+
+                return Json(new { success = true, lockMode = lockMode, message = "Lock mode updated successfully" });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in UpdateLockMode: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
         // POST: PageLock/UpdateMasterPassword
         [HttpPost]
         public async Task<IActionResult> UpdateMasterPassword(string password)
         {
             try
             {
+                // Use AsTracking to enable change tracking
                 var masterPassword = await _context.MasterPasswords
+                    .AsTracking()
                     .FirstOrDefaultAsync(mp => mp.PasswordType == "MasterLock");
 
                 if (masterPassword == null)

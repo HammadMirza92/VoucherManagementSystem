@@ -92,6 +92,10 @@ app.Use(async (context, next) =>
         path == "/pagelock/verifymasterpassword" ||
         path == "/pagelock/masterlockauth" ||
         path == "/pagelock/verifypassword" ||
+        path == "/pagelock/updatelockmode" ||
+        path == "/pagelock/updatepassword" ||
+        path == "/pagelock/togglelock" ||
+        path == "/pagelock/updatemasterpassword" ||
         path?.StartsWith("/lib") == true ||
         path?.StartsWith("/css") == true ||
         path?.StartsWith("/js") == true)

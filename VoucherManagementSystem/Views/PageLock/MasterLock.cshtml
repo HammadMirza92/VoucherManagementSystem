@@ -42,12 +42,13 @@
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-striped table-hover" id="pageLockTable">
-                <thead class="table-dark">
+                <thead>
                     <tr>
                         <th>Page Name</th>
                         <th>Page URL</th>
                         <th>Status</th>
                         <th>Lock/Unlock</th>
+                        <th>Lock Mode</th>
                         <th>Password</th>
                         <th>Last Modified</th>
                         <th>Modified By</th>
@@ -73,6 +74,17 @@
                                            @(pageLock.IsLocked ? "checked" : "")>
                                     <label class="form-check-label" for="toggle_@pageLock.Id">
                                         @(pageLock.IsLocked ? "Locked" : "Unlocked")
+                                    </label>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input lock-mode-toggle" type="checkbox"
+                                           id="lockMode_@pageLock.Id"
+                                           data-id="@pageLock.Id"
+                                           @(pageLock.LockMode == "JustView" ? "checked" : "")>
+                                    <label class="form-check-label" for="lockMode_@pageLock.Id">
+                                        <small>@(pageLock.LockMode == "JustView" ? "Just View" : "Login")</small>
                                     </label>
                                 </div>
                             </td>
@@ -216,6 +228,45 @@
                         alert('Error updating lock status');
                         // Revert checkbox
                         $('#toggle_' + id).prop('checked', !isChecked);
+                    }
+                });
+            });
+
+            // Toggle lock mode (Just View / Login)
+            $('.lock-mode-toggle').on('change', function() {
+                var id = $(this).data('id');
+                var isChecked = $(this).is(':checked');
+                var lockMode = isChecked ? 'JustView' : 'Login';
+
+                console.log('Lock mode toggle changed:', { id: id, isChecked: isChecked, lockMode: lockMode });
+
+                $.ajax({
+                    url: '@Url.Action("UpdateLockMode", "PageLock")',
+                    type: 'POST',
+                    data: { id: id, lockMode: lockMode },
+                    success: function(response) {
+                        console.log('Response received:', response);
+                        if (response.success) {
+                            // Update the label text
+                            var label = $('label[for="lockMode_' + id + '"]');
+                            label.find('small').text(lockMode === 'JustView' ? 'Just View' : 'Login');
+
+                            // Update the label for attribute text as well
+                            label.text(lockMode === 'JustView' ? 'Just View' : 'Login');
+
+                            showNotification('success', 'Lock mode updated to ' + (lockMode === 'JustView' ? 'Just View' : 'Login'));
+                        } else {
+                            console.error('Update failed:', response.message);
+                            alert('Error: ' + response.message);
+                            // Revert checkbox
+                            $('#lockMode_' + id).prop('checked', !isChecked);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX error:', { xhr: xhr, status: status, error: error });
+                        alert('Error updating lock mode: ' + error);
+                        // Revert checkbox
+                        $('#lockMode_' + id).prop('checked', !isChecked);
                     }
                 });
             });

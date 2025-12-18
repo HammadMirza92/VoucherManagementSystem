@@ -91,7 +91,10 @@ END
 
 PRINT 'User tracking fields added successfully to all tables!';
 
-
+ALTER TABLE PageLocks ADD LockMode nvarchar(20) NOT NULL DEFAULT 'JustView';
+GO
+INSERT INTO MasterPasswords (PasswordType, Password)
+VALUES ('MasterLock', 'admin123');
 --Steps to Complete the Implementation
 --Run the SQL Script:
 --Open SQL Server Management Studio (SSMS) or your preferred SQL client
