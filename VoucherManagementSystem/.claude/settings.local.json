@@ -6,7 +6,8 @@
       "Bash(dir:*)",
       "Bash(findstr:*)",
       "Bash(dotnet ef database:*)",
-      "Bash(del:*)"
+      "Bash(del:*)",
+      "Bash(if not exist:*)"
     ],
     "deny": [],
     "ask": []

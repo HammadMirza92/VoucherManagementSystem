@@ -22,6 +22,7 @@ namespace VoucherManagementSystem.Data
         public DbSet<PageLock> PageLocks { get; set; }
         public DbSet<MasterPassword> MasterPasswords { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<ThemeSettings> ThemeSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
