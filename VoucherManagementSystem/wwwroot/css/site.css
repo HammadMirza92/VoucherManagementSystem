@@ -6,34 +6,68 @@ html {
 }
 
 body {
-    margin-bottom: 60px;
-    background-color: #f8f9fa;
+    background-color: #f4f6f9;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.footer {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    white-space: nowrap;
-    line-height: 60px;
-    background-color: #f8f9fa;
+/* Professional Light Header */
+.navbar {
+    padding: 0.75rem 1rem;
+    background-color: #ffffff !important;
 }
 
-/* Custom styles */
 .navbar-brand {
-    font-weight: bold;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
+    letter-spacing: 0.5px;
 }
 
+.navbar-light .navbar-nav .nav-link {
+    color: #495057;
+    font-weight: 500;
+}
+
+.navbar-light .navbar-nav .nav-link:hover {
+    color: #0d6efd;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+}
+
+.navbar-light .navbar-nav .nav-link i {
+    font-size: 1rem;
+}
+
+/* Professional Footer */
+.footer {
+    background-color: #f8f9fa;
+    margin-top: auto;
+}
+
+.footer a {
+    color: #0d6efd;
+}
+
+.footer a:hover {
+    color: #0a58ca;
+}
+
+/* Card Styling - Clean & Professional */
 .card {
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
 }
 
 .card-header {
     font-weight: 600;
     border-bottom: 2px solid #e9ecef;
+    background-color: #fff;
+    padding: 1rem 1.25rem;
+}
+
+/* Table Styling - Keep Original Look */
+.table {
+    background-color: #fff;
 }
 
 .table th {
@@ -42,18 +76,23 @@ body {
     border-top: none;
 }
 
+/* Button Styling - Clean */
 .btn {
     font-weight: 500;
     padding: 8px 16px;
+    border-radius: 6px;
 }
 
 .btn-sm {
-    padding: 4px 8px;
+    padding: 5px 10px;
+    font-size: 0.875rem;
 }
 
+/* Badge Styling */
 .badge {
-    padding: 5px 10px;
+    padding: 6px 10px;
     font-weight: 500;
+    border-radius: 4px;
 }
 
 /* Dashboard cards */
@@ -65,17 +104,33 @@ body {
         transform: translateY(-5px);
     }
 
-/* Form styling */
+/* Form styling - Professional */
 .form-label {
     font-weight: 600;
     color: #495057;
-    margin-bottom: 5px;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.form-control,
+.form-select {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
 }
 
 .form-control:focus,
 .form-select:focus {
-    border-color: #80bdff;
-    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,.25);
+}
+
+/* Input Groups - Professional */
+.input-group-text {
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 0.95rem;
 }
 
 /* DataTables customization */
@@ -92,16 +147,53 @@ body {
     padding-top: 20px;
 }
 
-/* Dropdown menu */
+/* Dropdown menu - Professional */
 .dropdown-menu {
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 0.5rem 0;
 }
 
-/* Alert messages */
+.dropdown-item {
+    padding: 0.5rem 1.25rem;
+    font-size: 0.95rem;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Alert messages - Professional */
 .alert {
-    border: none;
-    border-radius: 5px;
+    border: 1px solid transparent;
+    border-radius: 6px;
     font-weight: 500;
+    padding: 1rem 1.25rem;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
 }
 
 /* Print styles */

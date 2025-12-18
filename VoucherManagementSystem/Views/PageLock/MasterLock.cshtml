@@ -3,30 +3,34 @@
     ViewData["Title"] = "Master Lock Configuration";
 }
 
-<div class="alert alert-info">
-    <i class="bi bi-info-circle"></i> Configure page access restrictions. Locked pages will require password authentication.
+
+<div class="alert alert-info" style="margin-top:10px;">
+    <i class="bi bi-info-circle-fill me-2"></i>
+    <strong>Information:</strong> Configure page access restrictions. Locked pages will require password authentication.
 </div>
 
 <!-- Master Password Section -->
-<div class="card mb-4">
+<div class="card mb-4" style="margin-top:10px;">
     <div class="card-header bg-warning text-dark">
-        <h5 class="mb-0"><i class="bi bi-key-fill"></i> Master Password Settings</h5>
+        <h5 class="mb-0"><i class="bi bi-key-fill me-2"></i>Master Password Settings</h5>
     </div>
     <div class="card-body">
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-lg-8">
+                <p class="text-muted mb-3">Set the master password to protect access to this configuration page.</p>
                 <div class="mb-3">
-                    <label for="masterPassword" class="form-label">Set Master Password</label>
+                    <label for="masterPassword" class="form-label">Master Password</label>
                     <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
                         <input type="password" class="form-control" id="masterPassword" placeholder="Enter new master password">
                         <button class="btn btn-outline-secondary toggle-master-password-btn" type="button" title="Show/Hide Password">
                             <i class="bi bi-eye"></i>
                         </button>
                         <button class="btn btn-warning" type="button" id="updateMasterPasswordBtn">
-                            <i class="bi bi-shield-lock"></i> Update Master Password
+                            <i class="bi bi-shield-check me-1"></i>Update Password
                         </button>
                     </div>
-                    <div class="form-text">This password is used to access this Master Lock page.</div>
+                    <div class="form-text"><i class="bi bi-info-circle me-1"></i>This password is required to access this Master Lock configuration page.</div>
                 </div>
             </div>
         </div>
@@ -35,11 +39,12 @@
 
 <div class="card">
     <div class="card-header bg-primary text-white">
-        <h5 class="mb-0"><i class="bi bi-list-check"></i> Page Lock Settings</h5>
+        <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>Page Lock Settings</h5>
     </div>
     <div class="card-body">
+        <p class="text-muted mb-3">Control access to individual pages by enabling locks and setting passwords.</p>
         <div class="table-responsive">
-            <table class="table table-striped table-hover" id="pageLockTable">
+            <table class="table table-striped table-hover mb-0" id="pageLockTable">
                 <thead>
                     <tr>
                         <th>Page Name</th>
