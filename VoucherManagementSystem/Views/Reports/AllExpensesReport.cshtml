@@ -81,12 +81,11 @@
             <div class="row">
                 @foreach (var summary in expenseSummary)
                 {
-                    decimal summaryTotal = Convert.ToDecimal(summary.Total);
-                    var percentage = totalExpenses > 0 ? (summaryTotal / totalExpenses * 100) : 0;
+                    var percentage = totalExpenses > 0 ? (summary.Total / totalExpenses * 100) : 0;
                     <div class="col-md-4 mb-2">
                         <div class="d-flex justify-content-between align-items-center">
                             <span>@summary.ExpenseHead</span>
-                            <span class="badge bg-danger">Rs. @string.Format("{0:N0}", summaryTotal)</span>
+                            <span class="badge bg-danger">Rs. @string.Format("{0:N0}", summary.Total)</span>
                         </div>
                         <div class="progress" style="height: 5px;">
                             <div class="progress-bar bg-danger" style="width: @percentage%"></div>

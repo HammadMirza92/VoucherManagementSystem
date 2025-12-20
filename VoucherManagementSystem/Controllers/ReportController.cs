@@ -1278,7 +1278,7 @@ namespace VoucherManagementSystem.Controllers
                 // Group by expense head for summary
                 var expenseSummary = expenses
                     .GroupBy(e => e.ExpenseHead?.Name ?? "Unknown")
-                    .Select(g => new { ExpenseHead = g.Key, Total = g.Sum(e => e.Amount) })
+                    .Select(g => new ExpenseSummaryItem { ExpenseHead = g.Key, Total = g.Sum(e => e.Amount) })
                     .OrderByDescending(x => x.Total)
                     .ToList();
 
@@ -1332,7 +1332,7 @@ namespace VoucherManagementSystem.Controllers
                 // Group by expense head for summary
                 var expenseSummary = expenses
                     .GroupBy(e => e.ExpenseHead?.Name ?? "Unknown")
-                    .Select(g => new { ExpenseHead = g.Key, Total = g.Sum(e => e.Amount) })
+                    .Select(g => new ExpenseSummaryItem { ExpenseHead = g.Key, Total = g.Sum(e => e.Amount) })
                     .OrderByDescending(x => x.Total)
                     .ToList();
 
@@ -1893,5 +1893,12 @@ namespace VoucherManagementSystem.Controllers
         public decimal AvgPurchaseRate { get; set; }
         public decimal StockValue { get; set; }
         public string Unit { get; set; }
+    }
+
+    // Helper class for expense summary
+    public class ExpenseSummaryItem
+    {
+        public string ExpenseHead { get; set; }
+        public decimal Total { get; set; }
     }
 }
