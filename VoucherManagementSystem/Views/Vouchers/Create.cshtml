@@ -357,7 +357,7 @@
                                         <td style="padding: 2px;">
                                             <label class="form-label mb-1" style="font-size: 0.85rem;">Stock (0/1)</label>
                                             <input type="text" class="form-control form-control-sm" id="stockIncludeText" value="0" maxlength="1" />
-                                            <input type="hidden" name="StockInclude" id="stockInclude" value="false" />
+                                            <input type="hidden" asp-for="StockInclude" id="stockInclude" />
                                         </td>
                                     </tr>
                                 </table>
@@ -388,6 +388,9 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
+            // Initialize stock include hidden field on page load
+            $('#stockInclude').val('False');
+
             // Initialize Select2 for customer dropdowns with search functionality
             $('#purchasingCustomer, #receivingCustomer').select2({
                 theme: 'bootstrap-5',
@@ -445,10 +448,10 @@
             $('#stockIncludeText').on('input', function() {
                 var value = $(this).val();
                 if (value === '1') {
-                    $('#stockInclude').val('true');
+                    $('#stockInclude').val('True');
                     $(this).val('1');
                 } else {
-                    $('#stockInclude').val('false');
+                    $('#stockInclude').val('False');
                     $(this).val('0');
                 }
             });
@@ -456,7 +459,7 @@
             // On form submit, ensure stockInclude hidden field is set correctly
             $('#voucherForm').on('submit', function(e) {
                 var value = $('#stockIncludeText').val();
-                $('#stockInclude').val(value === '1' ? 'true' : 'false');
+                $('#stockInclude').val(value === '1' ? 'True' : 'False');
 
                 // Validate Project is required for Purchase, Sale, Expense, and Hazri
                 var voucherType = '@Model.VoucherType';

@@ -164,7 +164,7 @@
                 <div class="col-md-2 mb-3" id="stockIncludeSection">
                     <label class="form-label">Stock Include</label>
                     <input type="text" class="form-control" id="stockIncludeText" value="@(Model.StockInclude ? "1" : "0")" maxlength="1" />
-                    <input type="hidden" name="StockInclude" id="stockInclude" value="@(Model.StockInclude ? "true" : "false")" />
+                    <input type="hidden" asp-for="StockInclude" id="stockInclude" />
                     <small class="text-muted">0=No, 1=Yes</small>
                 </div>
                 <div class="col-md-3 mb-3">
@@ -207,6 +207,11 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
+        // Initialize stock include hidden field on page load based on text field
+        $(document).ready(function() {
+            var currentValue = $('#stockIncludeText').val();
+            $('#stockInclude').val(currentValue === '1' ? 'True' : 'False');
+        });
         $(document).ready(function() {
             // Initialize Select2 for customer dropdowns with search functionality
             $('#purchasingCustomer, #receivingCustomer').select2({
@@ -265,10 +270,10 @@
             $('#stockIncludeText').on('input', function() {
                 var value = $(this).val();
                 if (value === '1') {
-                    $('#stockInclude').val('true');
+                    $('#stockInclude').val('True');
                     $(this).val('1');
                 } else {
-                    $('#stockInclude').val('false');
+                    $('#stockInclude').val('False');
                     $(this).val('0');
                 }
             });
@@ -276,7 +281,7 @@
             // On form submit, ensure stockInclude hidden field is set correctly
             $('#voucherEditForm').on('submit', function(e) {
                 var value = $('#stockIncludeText').val();
-                $('#stockInclude').val(value === '1' ? 'true' : 'false');
+                $('#stockInclude').val(value === '1' ? 'True' : 'False');
 
                 // Validate Project is required for Purchase, Sale, Expense, and Hazri
                 var voucherType = '@Model.VoucherType';

@@ -30,13 +30,15 @@ namespace VoucherManagementSystem.Repositories
         public async Task UpdateStockAsync(int itemId, decimal quantity, bool isAddition)
         {
             var item = await _context.Items.FindAsync(itemId);
-            if (item != null && item.StockTrackingEnabled)
+            if (item != null)
             {
                 if (isAddition)
                     item.CurrentStock += quantity;
                 else
                     item.CurrentStock -= quantity;
 
+                item.UpdatedDate = DateTime.Now;
+                _context.Items.Update(item);
                 await _context.SaveChangesAsync();
             }
         }
