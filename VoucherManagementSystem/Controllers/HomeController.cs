@@ -120,15 +120,19 @@ namespace VoucherManagementSystem.Controllers
                     }
                 }
 
-                if (toReceive > 0)
+                // Calculate net ending balance
+                decimal netBalance = toReceive - toPay;
+
+                // Only show in one section based on net balance
+                if (netBalance > 0)
                 {
-                    totalReceivables += toReceive;
-                    receivablesData.Add(new DashboardNameAmount { Name = customer.Name, Amount = toReceive });
+                    totalReceivables += netBalance;
+                    receivablesData.Add(new DashboardNameAmount { Name = customer.Name, Amount = netBalance });
                 }
-                if (toPay > 0)
+                else if (netBalance < 0)
                 {
-                    totalPayables += toPay;
-                    payablesData.Add(new DashboardNameAmount { Name = customer.Name, Amount = toPay });
+                    totalPayables += Math.Abs(netBalance);
+                    payablesData.Add(new DashboardNameAmount { Name = customer.Name, Amount = Math.Abs(netBalance) });
                 }
             }
             ViewBag.TotalReceivables = totalReceivables;
