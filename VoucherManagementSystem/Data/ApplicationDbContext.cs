@@ -23,6 +23,7 @@ namespace VoucherManagementSystem.Data
         public DbSet<MasterPassword> MasterPasswords { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<ThemeSettings> ThemeSettings { get; set; }
+        public DbSet<MonMultiplier> MonMultipliers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -149,6 +150,11 @@ namespace VoucherManagementSystem.Data
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Username)
                 .IsUnique();
+
+            // MonMultiplier configurations
+            modelBuilder.Entity<MonMultiplier>()
+                .Property(m => m.Multiplier)
+                .HasPrecision(18, 4);
         }
     }
 }

@@ -342,7 +342,9 @@
                                 <table class="w-100">
                                     <tr>
                                         <td style="padding: 2px;">
-                                            <label asp-for="Mon" class="form-label mb-1" style="font-size: 0.85rem;">Mon</label>
+                                            <label asp-for="Mon" class="form-label mb-1" style="font-size: 0.85rem;">
+                                                Mon <small id="monMultiplierHint" class="text-white opacity-75" style="font-size:0.7rem;"></small>
+                                            </label>
                                             <input asp-for="Mon" class="form-control form-control-sm" id="Mon" type="number" step="0.001" />
                                         </td>
                                     </tr>
@@ -739,6 +741,8 @@
                 updateTransactionNumber(voucherType);
                 configureFormForVoucherType(voucherType);
                 clearFormFields();
+                // Fetch multiplier for new voucher type
+                fetchMonMultiplier(voucherType);
             });
 
             // Show/hide sections based on initial voucher type
@@ -760,10 +764,28 @@
                 }
             });
 
+            // Current Mon multiplier (fetched from server based on voucher type)
+            var currentMonMultiplier = 40;
+
+            function fetchMonMultiplier(voucherType) {
+                if (!voucherType) return;
+                $.get('/MonMultiplier/GetMultiplier', { voucherType: voucherType }, function(data) {
+                    currentMonMultiplier = data.multiplier || 40;
+                    // Show multiplier hint near Mon field
+                    var hint = '× ' + currentMonMultiplier + ' = Weight';
+                    if ($('#monMultiplierHint').length) {
+                        $('#monMultiplierHint').text(hint);
+                    }
+                });
+            }
+
+            // Fetch multiplier for initial voucher type
+            fetchMonMultiplier($('#voucherTypeSelect').val());
+
             // Calculate Weight, Kat, and Quantity when Mon changes
             $('#Mon').on('input', function() {
                 var mon = parseFloat($(this).val()) || 0;
-                var weight = mon * 40;
+                var weight = mon * currentMonMultiplier;
                 $('#weight').val(weight.toFixed(3));
                 $('#kat').val(0);
                 var quantity = weight - 0;
