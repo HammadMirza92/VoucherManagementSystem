@@ -279,7 +279,7 @@ namespace VoucherManagementSystem.Controllers
         }
 
         // GET: Vouchers/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Edit(int? id, bool returnToGeneral = false)
         {
             if (id == null)
             {
@@ -292,6 +292,7 @@ namespace VoucherManagementSystem.Controllers
                 return NotFound();
             }
 
+            ViewBag.ReturnToGeneral = returnToGeneral;
             await PrepareViewBags();
             return View(voucher);
         }
@@ -386,6 +387,13 @@ namespace VoucherManagementSystem.Controllers
 
                 await _voucherRepository.UpdateAsync(voucher);
                 TempData["Success"] = "Voucher updated successfully!";
+
+                // Check if came from GeneralCreate page
+                if (Request.Form["returnToGeneral"] == "true")
+                {
+                    return RedirectToAction(nameof(GeneralCreate));
+                }
+
                 return RedirectToAction(nameof(Index));
             }
             catch (DbUpdateConcurrencyException)

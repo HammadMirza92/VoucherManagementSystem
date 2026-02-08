@@ -2,10 +2,15 @@
 @{
     ViewData["Title"] = "All Expenses Report";
     var expenses = ViewBag.Expenses as IEnumerable<VoucherManagementSystem.Models.Voucher>;
+    var expenseEntries = ViewBag.ExpenseEntries as IEnumerable<VoucherManagementSystem.Models.Voucher>;
+    var hazriEntries = ViewBag.HazriEntries as IEnumerable<VoucherManagementSystem.Models.Voucher>;
     var expenseSummary = ViewBag.ExpenseSummary as IEnumerable<dynamic>;
     var fromDate = (DateTime)ViewBag.FromDate;
     var toDate = (DateTime)ViewBag.ToDate;
     var totalExpenses = (decimal)(ViewBag.TotalExpenses ?? 0);
+    var totalHazri = (decimal)(ViewBag.TotalHazri ?? 0);
+    var openingBalance = (decimal)(ViewBag.OpeningBalance ?? 0);
+    var netTotal = (decimal)(ViewBag.NetTotal ?? 0);
 }
 
 <div class="d-print-none">
@@ -44,7 +49,15 @@
 
 <!-- Summary Cards -->
 <div class="row mb-3">
-    <div class="col-md-4">
+    <div class="col-md-3">
+        <div class="card bg-secondary text-white">
+            <div class="card-body text-center">
+                <h6>Opening Balance</h6>
+                <h3>Rs. @string.Format("{0:N0}", openingBalance)</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
         <div class="card bg-danger text-white">
             <div class="card-body text-center">
                 <h6>Total Expenses</h6>
@@ -52,19 +65,19 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card bg-warning text-dark">
             <div class="card-body text-center">
-                <h6>Total Transactions</h6>
-                <h3>@(expenses?.Count() ?? 0)</h3>
+                <h6>Total Hazri (Deducted)</h6>
+                <h3>Rs. @string.Format("{0:N0}", totalHazri)</h3>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card bg-info text-white">
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
             <div class="card-body text-center">
-                <h6>Expense Heads Used</h6>
-                <h3>@(expenseSummary?.Count() ?? 0)</h3>
+                <h6>Net Total (Expense - Hazri)</h6>
+                <h3>Rs. @string.Format("{0:N0}", netTotal)</h3>
             </div>
         </div>
     </div>
@@ -75,7 +88,7 @@
 {
     <div class="card mb-3">
         <div class="card-header bg-secondary text-white">
-            <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Expense Summary by Head</h5>
+            <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Expense Summary by Head (Excluding Hazri)</h5>
         </div>
         <div class="card-body">
             <div class="row">
@@ -117,17 +130,27 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @{
+                        // Show opening balance row
+                        if (openingBalance > 0)
+                        {
+                            <tr class="table-info fw-bold">
+                                <td colspan="6">Opening Balance (before @fromDate.ToString("dd-MMM-yyyy"))</td>
+                                <td class="text-end">Rs. @string.Format("{0:N0}", openingBalance)</td>
+                            </tr>
+                        }
+                    }
                     @if (expenses != null && expenses.Any())
                     {
                         foreach (var e in expenses)
                         {
-                            <tr>
+                            <tr class="@(e.VoucherType == VoucherManagementSystem.Models.VoucherType.Hazri ? "table-warning" : "")">
                                 <td>@e.VoucherDate.ToString("dd-MMM-yy")</td>
                                 <td>
                                     <a asp-controller="Vouchers" asp-action="Details" asp-route-id="@e.Id">@e.TransactionNumber</a>
                                 </td>
                                 <td>
-                                    <span class="badge bg-@(e.VoucherType == VoucherManagementSystem.Models.VoucherType.Hazri ? "warning" : "danger")">@e.VoucherType</span>
+                                    <span class="badge bg-@(e.VoucherType == VoucherManagementSystem.Models.VoucherType.Hazri ? "warning text-dark" : "danger")">@e.VoucherType</span>
                                 </td>
                                 <td>@e.ExpenseHead?.Name</td>
                                 <td>@e.ExpenseHeadDetails</td>
@@ -137,7 +160,16 @@
                                         <a asp-controller="Reports" asp-action="ProjectReport" asp-route-projectId="@e.ProjectId">@e.Project?.Name</a>
                                     }
                                 </td>
-                                <td class="text-end text-danger fw-bold">Rs. @string.Format("{0:N0}", e.Amount)</td>
+                                <td class="text-end fw-bold @(e.VoucherType == VoucherManagementSystem.Models.VoucherType.Hazri ? "text-warning" : "text-danger")">
+                                    @if (e.VoucherType == VoucherManagementSystem.Models.VoucherType.Hazri)
+                                    {
+                                        <span>(-) Rs. @string.Format("{0:N0}", e.Amount)</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Rs. @string.Format("{0:N0}", e.Amount)</span>
+                                    }
+                                </td>
                             </tr>
                         }
                     }
@@ -152,8 +184,16 @@
                 {
                     <tfoot class="table-dark">
                         <tr>
-                            <th colspan="6" class="text-end">Total:</th>
+                            <th colspan="6" class="text-end">Total Expenses:</th>
                             <th class="text-end">Rs. @string.Format("{0:N0}", totalExpenses)</th>
+                        </tr>
+                        <tr class="table-warning">
+                            <th colspan="6" class="text-end">Less: Hazri:</th>
+                            <th class="text-end">(-) Rs. @string.Format("{0:N0}", totalHazri)</th>
+                        </tr>
+                        <tr class="table-success">
+                            <th colspan="6" class="text-end">Net Total (Expense - Hazri):</th>
+                            <th class="text-end">Rs. @string.Format("{0:N0}", netTotal)</th>
                         </tr>
                     </tfoot>
                 }

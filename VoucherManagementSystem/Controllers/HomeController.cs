@@ -88,7 +88,7 @@ namespace VoucherManagementSystem.Controllers
                 }
             }
             ViewBag.TotalStockValue = totalStockValue;
-            ViewBag.StockData = stockData.Take(10).ToList();
+            ViewBag.StockData = stockData.ToList();
 
             // 2. Customer Receivables & Payables
             var customers = await _customerRepository.GetActiveCustomersAsync();
@@ -137,8 +137,8 @@ namespace VoucherManagementSystem.Controllers
             }
             ViewBag.TotalReceivables = totalReceivables;
             ViewBag.TotalPayables = totalPayables;
-            ViewBag.ReceivablesData = receivablesData.OrderByDescending(x => x.Amount).Take(10).ToList();
-            ViewBag.PayablesData = payablesData.OrderByDescending(x => x.Amount).Take(10).ToList();
+            ViewBag.ReceivablesData = receivablesData.OrderByDescending(x => x.Amount).ToList();
+            ViewBag.PayablesData = payablesData.OrderByDescending(x => x.Amount).ToList();
 
             // 3. Cash in Hand
             decimal cashInHand = 0;

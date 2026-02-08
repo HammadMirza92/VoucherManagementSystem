@@ -4,7 +4,9 @@
       "Bash(dotnet ef migrations add:*)",
       "Bash(dotnet build)",
       "Bash(dotnet ef migrations:*)",
-      "Bash(dotnet build:*)"
+      "Bash(dotnet build:*)",
+      "Bash(dir:*)",
+      "Bash(Select-String \"error|Error\")"
     ],
     "deny": [],
     "ask": []

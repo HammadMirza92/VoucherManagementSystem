@@ -139,6 +139,11 @@
                     </select>
                 </div>
 
+                <div class="col-md-2">
+                    <label class="form-label"><i class="bi bi-truck"></i> Gari No.</label>
+                    <input type="text" name="gariNo" class="form-control" value="@ViewBag.SelectedGariNo" placeholder="Vehicle No." />
+                </div>
+
                 <div class="col-md-1 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="bi bi-search"></i> Filter
@@ -312,6 +317,7 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th>Item Name</th>
+                                        <th class="text-center">Opening Stock (Qty)</th>
                                         <th class="text-center">Total Purchased (Qty)</th>
                                         <th class="text-end">Total Purchase Amount</th>
                                         <th class="text-center">Total Sold (Qty)</th>
@@ -325,6 +331,7 @@
                                     {
                                         <tr>
                                             <td>@item.ItemName</td>
+                                            <td class="text-center fw-semibold">@item.OpeningStockQty.ToString("N2") @item.Unit</td>
                                             <td class="text-center">@item.PurchaseQty.ToString("N2") @item.Unit</td>
                                             <td class="text-end">Rs. @string.Format("{0:N0}", item.PurchaseAmount)</td>
                                             <td class="text-center">@item.SaleQty.ToString("N2") @item.Unit</td>
@@ -341,6 +348,7 @@
                                 <tfoot class="table-secondary">
                                     <tr>
                                         <th>Total</th>
+                                        <th class="text-center">-</th>
                                         <th class="text-center">-</th>
                                         <th class="text-end">Rs. @string.Format("{0:N0}", itemSummary.Sum(i => i.PurchaseAmount))</th>
                                         <th class="text-center">-</th>

@@ -1,6 +1,12 @@
 @* Views/Reports/CustomerLedger.cshtml *@
 @{
     ViewData["Title"] = "Customer Ledger";
+
+    Func<VoucherManagementSystem.Models.VoucherType, string> getDisplayType = (vt) => vt switch {
+        VoucherManagementSystem.Models.VoucherType.CCR => "Received",
+        VoucherManagementSystem.Models.VoucherType.BCR => "Purchase",
+        _ => vt.ToString()
+    };
 }
 
 <div class="d-print-none">
@@ -80,7 +86,7 @@ else
                         <option value="Sale" selected="@(ViewBag.SelectedVoucherType == "Sale")">Sale</option>
                         <option value="CashPaid" selected="@(ViewBag.SelectedVoucherType == "CashPaid")">Cash Paid</option>
                         <option value="CashReceived" selected="@(ViewBag.SelectedVoucherType == "CashReceived")">Cash Received</option>
-                        <option value="CCR" selected="@(ViewBag.SelectedVoucherType == "CCR")">CCR</option>
+                        <option value="CCR" selected="@(ViewBag.SelectedVoucherType == "CCR")">Received (CCR)</option>
                         <option value="Expense" selected="@(ViewBag.SelectedVoucherType == "Expense")">Expense</option>
                         <option value="Hazri" selected="@(ViewBag.SelectedVoucherType == "Hazri")">Hazri</option>
                     </select>
@@ -253,7 +259,7 @@ else
                                                               voucher.VoucherType == VoucherManagementSystem.Models.VoucherType.Sale ? "success" :
                                                               voucher.VoucherType == VoucherManagementSystem.Models.VoucherType.CashPaid ? "warning text-dark" :
                                                               voucher.VoucherType == VoucherManagementSystem.Models.VoucherType.CashReceived ? "info" : "secondary")" style="font-size: 11px;">
-                                            @voucher.VoucherType
+                                            @getDisplayType(voucher.VoucherType)
                                         </span>
                                     </td>
                                     <td class="align-middle">@itemName</td>

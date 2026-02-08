@@ -69,7 +69,7 @@ namespace VoucherManagementSystem.Controllers
         }
 
         // GET: Reports/ProjectReport - Project details report
-        public async Task<IActionResult> ProjectReport(int projectId, DateTime? fromDate, DateTime? toDate, string? voucherType, int? itemId, int? customerId)
+        public async Task<IActionResult> ProjectReport(int projectId, DateTime? fromDate, DateTime? toDate, string? voucherType, int? itemId, int? customerId, string? gariNo)
         {
             try
             {
@@ -114,6 +114,12 @@ namespace VoucherManagementSystem.Controllers
                                             v.ReceivingCustomerId == customerId.Value);
                 }
 
+                // Apply gari no filter if provided
+                if (!string.IsNullOrWhiteSpace(gariNo))
+                {
+                    query = query.Where(v => v.GariNo != null && v.GariNo.Contains(gariNo));
+                }
+
                 var vouchers = await query.OrderBy(v => v.VoucherDate).ToListAsync();
 
                 // Get item-wise purchase and sale summary with filters
@@ -152,6 +158,7 @@ namespace VoucherManagementSystem.Controllers
                 ViewBag.SelectedVoucherType = voucherType;
                 ViewBag.SelectedItemId = itemId;
                 ViewBag.SelectedCustomerId = customerId;
+                ViewBag.SelectedGariNo = gariNo;
 
                 return View("ProfitLoss");
             }
@@ -166,7 +173,7 @@ namespace VoucherManagementSystem.Controllers
         // POST: Reports/ProfitLoss
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ProfitLoss(int projectId, DateTime fromDate, DateTime toDate, string? voucherType, int? itemId, int? customerId)
+        public async Task<IActionResult> ProfitLoss(int projectId, DateTime fromDate, DateTime toDate, string? voucherType, int? itemId, int? customerId, string? gariNo)
         {
             try
             {
@@ -185,7 +192,8 @@ namespace VoucherManagementSystem.Controllers
                     toDate = toDate,
                     voucherType = voucherType,
                     itemId = itemId,
-                    customerId = customerId
+                    customerId = customerId,
+                    gariNo = gariNo
                 });
             }
             catch (Exception ex)
@@ -408,6 +416,52 @@ namespace VoucherManagementSystem.Controllers
 
             ViewBag.AdjustmentType = adjustment.AdjustmentType;
             return View(adjustment);
+        }
+
+        // GET: Reports/ActivityLog - Show system activity (entries added/edited/deleted) by date
+        public async Task<IActionResult> ActivityLog(DateTime? activityDate)
+        {
+            try
+            {
+                var logDate = activityDate ?? DateTime.Today;
+                var nextDay = logDate.AddDays(1);
+
+                // Find all vouchers created on this date
+                var createdVouchers = await _context.Vouchers
+                    .Include(v => v.PurchasingCustomer)
+                    .Include(v => v.ReceivingCustomer)
+                    .Include(v => v.Item)
+                    .Include(v => v.ExpenseHead)
+                    .Include(v => v.Project)
+                    .Where(v => v.CreatedDate >= logDate && v.CreatedDate < nextDay)
+                    .OrderBy(v => v.CreatedDate)
+                    .ToListAsync();
+
+                // Find all vouchers updated on this date (that were NOT created today)
+                var updatedVouchers = await _context.Vouchers
+                    .Include(v => v.PurchasingCustomer)
+                    .Include(v => v.ReceivingCustomer)
+                    .Include(v => v.Item)
+                    .Include(v => v.ExpenseHead)
+                    .Include(v => v.Project)
+                    .Where(v => v.UpdatedDate.HasValue && v.UpdatedDate >= logDate && v.UpdatedDate < nextDay)
+                    .OrderBy(v => v.UpdatedDate)
+                    .ToListAsync();
+
+                ViewBag.ActivityDate = logDate;
+                ViewBag.CreatedVouchers = createdVouchers;
+                ViewBag.UpdatedVouchers = updatedVouchers;
+                ViewBag.TotalCreated = createdVouchers.Count;
+                ViewBag.TotalUpdated = updatedVouchers.Count;
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating activity log");
+                TempData["Error"] = "Error generating activity log.";
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         // Helper method to get opening cash balance
@@ -899,24 +953,25 @@ namespace VoucherManagementSystem.Controllers
         }
 
         // GET: Reports/DailyCashBook
-        public async Task<IActionResult> DailyCashBook(DateTime? date)
+        public async Task<IActionResult> DailyCashBook(DateTime? fromDate, DateTime? toDate)
         {
             try
             {
-                var reportDate = date ?? DateTime.Today;
-                var nextDay = reportDate.AddDays(1);
+                var startDate = fromDate ?? DateTime.Today;
+                var endDate = toDate ?? DateTime.Today;
+                var nextDay = endDate.AddDays(1);
 
-                // Get opening balance
-                var openingBalance = await GetOpeningCashBalanceAsync(reportDate);
+                // Get opening balance (based on start date)
+                var openingBalance = await GetOpeningCashBalanceAsync(startDate);
 
-                // Get today's transactions
-                var todayVouchers = await _context.Vouchers
+                // Get transactions in range
+                var vouchers = await _context.Vouchers
                     .Include(v => v.PurchasingCustomer)
                     .Include(v => v.ReceivingCustomer)
                     .Include(v => v.Item)
                     .Include(v => v.ExpenseHead)
                     .Include(v => v.Project)
-                    .Where(v => v.VoucherDate >= reportDate &&
+                    .Where(v => v.VoucherDate >= startDate &&
                                v.VoucherDate < nextDay &&
                                (v.CashType == CashType.Cash ||
                                 v.VoucherType == VoucherType.CashPaid ||
@@ -924,9 +979,11 @@ namespace VoucherManagementSystem.Controllers
                     .OrderBy(v => v.VoucherDate)
                     .ToListAsync();
 
-                ViewBag.ReportDate = reportDate;
+                ViewBag.FromDate = startDate;
+                ViewBag.ToDate = endDate;
+                ViewBag.ReportDate = startDate; // kept for backward compat
                 ViewBag.OpeningBalance = openingBalance;
-                ViewBag.Vouchers = todayVouchers;
+                ViewBag.Vouchers = vouchers;
 
                 return View();
             }
@@ -1153,6 +1210,9 @@ namespace VoucherManagementSystem.Controllers
                 var purchaseAmount = purchases.Sum(p => p.Amount);
                 var saleAmount = sales.Sum(s => s.Amount);
 
+                // Calculate opening stock (purchases - sales before fromDate for this project+item)
+                var openingStockQty = await GetOpeningStockAsync(item.Id, fromDate);
+
                 // Calculate average purchase rate
                 var avgPurchaseRate = purchaseQty > 0 ? purchaseAmount / purchaseQty : 0;
                 var stockValue = stockQty * avgPurchaseRate;
@@ -1160,6 +1220,7 @@ namespace VoucherManagementSystem.Controllers
                 summary.Add(new ProjectItemSummary
                 {
                     ItemName = item?.Name ?? "Unknown",
+                    OpeningStockQty = openingStockQty,
                     PurchaseQty = purchaseQty,
                     SaleQty = saleQty,
                     StockQty = stockQty,
@@ -1275,8 +1336,22 @@ namespace VoucherManagementSystem.Controllers
 
                 var expenses = await query.OrderByDescending(v => v.VoucherDate).ThenByDescending(v => v.Id).ToListAsync();
 
-                // Group by expense head for summary
-                var expenseSummary = expenses
+                // Separate hazri entries from expense entries
+                var hazriEntries = expenses.Where(e => e.VoucherType == VoucherType.Hazri).ToList();
+                var expenseEntries = expenses.Where(e => e.VoucherType == VoucherType.Expense).ToList();
+
+                // Calculate opening balance: sum of expenses before startDate (excluding hazri)
+                var openingBalanceQuery = _context.Vouchers
+                    .Where(v => v.VoucherType == VoucherType.Expense &&
+                               v.VoucherDate < startDate);
+                if (expenseHeadId.HasValue)
+                {
+                    openingBalanceQuery = openingBalanceQuery.Where(v => v.ExpenseHeadId == expenseHeadId);
+                }
+                var openingBalance = await openingBalanceQuery.SumAsync(v => v.Amount);
+
+                // Group by expense head for summary (expense only, excluding hazri)
+                var expenseSummary = expenseEntries
                     .GroupBy(e => e.ExpenseHead?.Name ?? "Unknown")
                     .Select(g => new ExpenseSummaryItem { ExpenseHead = g.Key, Total = g.Sum(e => e.Amount) })
                     .OrderByDescending(x => x.Total)
@@ -1286,8 +1361,13 @@ namespace VoucherManagementSystem.Controllers
                 ViewBag.ToDate = endDate;
                 ViewBag.SelectedExpenseHeadId = expenseHeadId;
                 ViewBag.Expenses = expenses;
+                ViewBag.ExpenseEntries = expenseEntries;
+                ViewBag.HazriEntries = hazriEntries;
                 ViewBag.ExpenseSummary = expenseSummary;
-                ViewBag.TotalExpenses = expenses.Sum(e => e.Amount);
+                ViewBag.TotalExpenses = expenseEntries.Sum(e => e.Amount);
+                ViewBag.TotalHazri = hazriEntries.Sum(e => e.Amount);
+                ViewBag.OpeningBalance = openingBalance;
+                ViewBag.NetTotal = expenseEntries.Sum(e => e.Amount) - hazriEntries.Sum(e => e.Amount);
 
                 return View();
             }
@@ -1885,6 +1965,7 @@ namespace VoucherManagementSystem.Controllers
     public class ProjectItemSummary
     {
         public string ItemName { get; set; }
+        public decimal OpeningStockQty { get; set; }
         public decimal PurchaseQty { get; set; }
         public decimal SaleQty { get; set; }
         public decimal StockQty { get; set; }

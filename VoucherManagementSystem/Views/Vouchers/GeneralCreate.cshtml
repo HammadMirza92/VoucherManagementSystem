@@ -140,7 +140,7 @@
                                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info" title="Details">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning" title="Edit">
+                                    <a asp-action="Edit" asp-route-id="@item.Id" asp-route-returnToGeneral="true" class="btn btn-sm btn-warning" title="Edit">
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <button type="button" class="btn btn-sm btn-danger delete-voucher" data-id="@item.Id" title="Delete">
@@ -473,6 +473,48 @@
                 localStorage.setItem('voucherDate', $(this).val());
             });
 
+            // Restore saved form selections (project, voucher type, cash type, customer)
+            var savedVoucherType = localStorage.getItem('gc_voucherType');
+            var savedProjectId = localStorage.getItem('gc_projectId');
+            var savedCashType = localStorage.getItem('gc_cashType');
+            var savedPurchasingCustomer = localStorage.getItem('gc_purchasingCustomer');
+            var savedReceivingCustomer = localStorage.getItem('gc_receivingCustomer');
+
+            if (savedVoucherType) {
+                $('#voucherTypeSelect').val(savedVoucherType);
+                configureFormForVoucherType(savedVoucherType);
+                updateTransactionNumber(savedVoucherType);
+            }
+            if (savedProjectId) {
+                $('#ProjectId').val(savedProjectId);
+            }
+            if (savedCashType) {
+                $('#cashType').val(savedCashType);
+                if (savedCashType === 'Bank') {
+                    $('#bankColumn').show();
+                }
+            }
+            if (savedPurchasingCustomer) {
+                $('#purchasingCustomer').val(savedPurchasingCustomer).trigger('change');
+            }
+            if (savedReceivingCustomer) {
+                $('#receivingCustomer').val(savedReceivingCustomer).trigger('change');
+            }
+
+            // Save selections to localStorage on change
+            $('#ProjectId').on('change', function() {
+                localStorage.setItem('gc_projectId', $(this).val());
+            });
+            $('#cashType').on('change', function() {
+                localStorage.setItem('gc_cashType', $(this).val());
+            });
+            $('#purchasingCustomer').on('change', function() {
+                localStorage.setItem('gc_purchasingCustomer', $(this).val());
+            });
+            $('#receivingCustomer').on('change', function() {
+                localStorage.setItem('gc_receivingCustomer', $(this).val());
+            });
+
             // Auto-scroll to form after page load (when redirected after save)
             @if (TempData["Success"] != null)
             {
@@ -689,6 +731,11 @@
             // Handle Voucher Type change
             $('#voucherTypeSelect').on('change', function() {
                 var voucherType = $(this).val();
+                localStorage.setItem('gc_voucherType', voucherType);
+                // Clear customer/cash selections when type changes
+                localStorage.removeItem('gc_cashType');
+                localStorage.removeItem('gc_purchasingCustomer');
+                localStorage.removeItem('gc_receivingCustomer');
                 updateTransactionNumber(voucherType);
                 configureFormForVoucherType(voucherType);
                 clearFormFields();

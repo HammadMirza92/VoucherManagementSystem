@@ -18,6 +18,7 @@
             <input type="hidden" asp-for="VoucherType" />
             <input type="hidden" asp-for="CreatedDate" />
             <input type="hidden" asp-for="CreatedBy" />
+            <input type="hidden" name="returnToGeneral" value="@(ViewBag.ReturnToGeneral == true ? "true" : "false")" />
 
             <div class="row">
                 <div class="col-md-3 mb-3">
